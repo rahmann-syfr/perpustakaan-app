@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class BorrowingController extends Controller
 {
-    // Menampilkan riwayat transaksi (Fungsi yang memicu error karena hilang)
+    // Menampilkan riwayat transaksi (Fungsi untuk Admin)
     public function index()
     {
         // Memuat relasi user (peminjam), admin (petugas), dan book (buku)
@@ -81,7 +81,7 @@ class BorrowingController extends Controller
             $daysLate = $dueDate->diffInDays($now);
             $finePerDay = 2000; // Setup denda Rp 2.000 per hari
             
-            $fineAmount = $daysLate * $finePerDay;
+            $fineAmount = $daysLate * $finePerDay; // Perbaikan syntax error di sini
             $status = 'overdue'; 
         }
 
@@ -100,5 +100,16 @@ class BorrowingController extends Controller
             : "Buku berhasil dikembalikan tepat waktu.";
 
         return redirect('/borrowings')->with('success', $message);
+    }
+
+    // Menampilkan riwayat peminjaman khusus untuk mahasiswa yang sedang login
+    public function history()
+    {
+        $riwayat = Borrowing::with(['book', 'admin'])
+                    ->where('user_id', Auth::id())
+                    ->latest()
+                    ->get();
+
+        return view('riwayat', compact('riwayat'));
     }
 }

@@ -22,22 +22,31 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
+                    <!-- id="table1" akan memicu DataTables bawaan template Mazer -->
                     <table class="table table-striped" id="table1">
                         <thead>
                             <tr>
-                                <th>No</th>
+                                <th>Sampul</th>
                                 <th>Judul Buku</th>
                                 <th>Kategori</th>
                                 <th>Penulis</th>
                                 <th>Tahun</th>
-                                <th>Stok (Tersedia / Total)</th>
+                                <th>Stok (Ada / Total)</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($books as $index => $book)
+                            @forelse ($books as $book)
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
+                                    <td>
+                                        @if($book->cover_image)
+                                            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="Sampul" class="rounded" width="50" height="70" style="object-fit: cover;">
+                                        @else
+                                            <div class="bg-light rounded d-flex justify-content-center align-items-center" style="width: 50px; height: 70px;">
+                                                <i class="bi bi-book text-secondary"></i>
+                                            </div>
+                                        @endif
+                                    </td>
                                     <td>
                                         <strong>{{ $book->title }}</strong><br>
                                         <small class="text-muted">ISBN: {{ $book->isbn }}</small>
@@ -51,13 +60,20 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <form action="/books/{{ $book->id }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus buku ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash-fill"></i>
-                                            </button>
-                                        </form>
+                                        <div class="d-flex gap-1">
+                                            <!-- Tombol Edit (Kuning) -->
+                                            <a href="/books/{{ $book->id }}/edit" class="btn btn-sm btn-warning">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <!-- Tombol Hapus (Merah) -->
+                                            <form action="/books/{{ $book->id }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus buku ini?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

@@ -44,6 +44,14 @@
                     </a>
                 </li>
 
+                <!-- Menu Riwayat (Semua Role - Posisikan di LUAR pengecekan role admin) -->
+                <li class="sidebar-item {{ Request::is('riwayat') ? 'active' : '' }}">
+                    <a href="/riwayat" class='sidebar-link'>
+                        <i class="bi bi-clock-history"></i>
+                        <span>Riwayat Saya</span>
+                    </a>
+                </li>
+
                 <!-- Menu Khusus Admin & Superadmin -->
                 @if(Auth::user()->role != 'anggota')
                 <li class="sidebar-item {{ Request::is('categories*') ? 'active' : '' }}">
@@ -57,6 +65,13 @@
                     <a href="/books" class='sidebar-link'>
                         <i class="bi bi-book-half"></i>
                         <span>Data Buku</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-item {{ Request::is('users*') ? 'active' : '' }}">
+                    <a href="/users" class='sidebar-link'>
+                        <i class="bi bi-people-fill"></i>
+                        <span>Data Anggota</span>
                     </a>
                 </li>
 
