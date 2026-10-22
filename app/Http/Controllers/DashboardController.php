@@ -12,17 +12,18 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Jika yang login adalah anggota, arahkan langsung ke halaman katalog
+        $totalBuku = Book::sum('total_stock'); 
+        $bukuDipinjam = Borrowing::where('status', 'borrowed')->count(); 
+        $totalAnggota = User::where('role', 'anggota')->count(); 
+        $totalDenda = Borrowing::sum('fine_amount'); 
+
+        $pinjamanSaya = 0;
         if (Auth::user()->role == 'anggota') {
-            return redirect('/katalog');
+            $pinjamanSaya = Borrowing::where('user_id', Auth::id())
+                                     ->where('status', 'borrowed')
+                                     ->count();
         }
 
-        // Hitung statistik untuk Dashboard Admin
-        $totalBuku = Book::sum('total_stock'); // Menghitung seluruh fisik buku
-        $bukuDipinjam = Borrowing::where('status', 'borrowed')->count(); // Transaksi aktif
-        $totalAnggota = User::where('role', 'anggota')->count(); // Jumlah mahasiswa/anggota
-        $totalDenda = Borrowing::sum('fine_amount'); // Total denda yang terkumpul
-
-        return view('dashboard', compact('totalBuku', 'bukuDipinjam', 'totalAnggota', 'totalDenda'));
+        return view('dashboard', compact('totalBuku', 'bukuDipinjam', 'totalAnggota', 'totalDenda', 'pinjamanSaya'));
     }
 }

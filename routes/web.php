@@ -6,14 +6,14 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\UserController; // Import controller baru
+use App\Http\Controllers\UserController; 
 
 // Route untuk yang belum login (Guest)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'login'])->name('login');
     Route::post('/login', [AuthController::class, 'authenticate']);
     
-    // Route untuk Katalog (Bisa diakses semua role)
+    // Route untuk Katalog (Bisa diakses tanpa login jika diinginkan)
     Route::get('/katalog', [BookController::class, 'katalog']);
 });
 
@@ -50,8 +50,9 @@ Route::middleware('auth')->group(function () {
         Route::put('/users/{id}', [UserController::class, 'update']);
         Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
-        // Route Sirkulasi
+        // Route Sirkulasi & Laporan
         Route::get('/borrowings', [BorrowingController::class, 'index']);
+        Route::get('/borrowings/report-pdf', [BorrowingController::class, 'reportPdf']); // <-- Rute Cetak PDF Ditambahkan
         Route::get('/borrowings/create', [BorrowingController::class, 'create']);
         Route::post('/borrowings', [BorrowingController::class, 'store']);
         Route::post('/borrowings/{id}/return', [BorrowingController::class, 'returnBook']);

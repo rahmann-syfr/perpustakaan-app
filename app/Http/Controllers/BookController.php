@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage; 
+use Illuminate\Support\Facades\Storage;
 
 class BookController extends Controller
 {
@@ -78,12 +78,14 @@ class BookController extends Controller
         $coverImagePath = $book->cover_image; 
 
         if ($request->hasFile('cover_image')) {
+            // Hapus gambar lama jika ada
             if ($book->cover_image && Storage::disk('public')->exists($book->cover_image)) {
                 Storage::disk('public')->delete($book->cover_image);
             }
             $coverImagePath = $request->file('cover_image')->store('covers', 'public');
         }
 
+        // Hitung selisih stok agar available_stock tetap sinkron
         $stockDifference = $request->total_stock - $book->total_stock;
         $newAvailableStock = $book->available_stock + $stockDifference;
 
@@ -117,6 +119,7 @@ class BookController extends Controller
     {
         $query = Book::with('category')->latest();
 
+        // Fitur pencarian berdasarkan judul atau penulis
         if ($request->has('search') && $request->search != '') {
             $query->where(function($q) use ($request) {
                 $q->where('title', 'like', '%' . $request->search . '%')
@@ -124,6 +127,7 @@ class BookController extends Controller
             });
         }
 
+        // Fitur filter berdasarkan kategori
         if ($request->has('category') && $request->category != '') {
             $query->where('category_id', $request->category);
         }

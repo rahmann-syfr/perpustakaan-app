@@ -34,7 +34,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'anggota', // Set default role sebagai anggota
+            'role' => 'anggota', 
         ]);
 
         return redirect('/users')->with('success', 'Data anggota berhasil ditambahkan!');
