@@ -12,7 +12,12 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $totalBuku = Book::sum('total_stock'); 
+        // Menghitung jumlah JUDUL BUKU (bukan total stok fisik)
+        $totalBuku = Book::count(); 
+        
+        // Mengambil data buku untuk ditampilkan di dalam popup modal
+        $booksData = Book::orderBy('title', 'asc')->get();
+
         $bukuDipinjam = Borrowing::where('status', 'borrowed')->count(); 
         $totalAnggota = User::where('role', 'anggota')->count(); 
         $totalDenda = Borrowing::sum('fine_amount'); 
@@ -24,6 +29,7 @@ class DashboardController extends Controller
                                      ->count();
         }
 
-        return view('dashboard', compact('totalBuku', 'bukuDipinjam', 'totalAnggota', 'totalDenda', 'pinjamanSaya'));
+        // Variabel $booksData dikirim ke view melalui compact()
+        return view('dashboard', compact('totalBuku', 'booksData', 'bukuDipinjam', 'totalAnggota', 'totalDenda', 'pinjamanSaya'));
     }
 }

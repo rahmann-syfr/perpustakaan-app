@@ -15,72 +15,61 @@
 
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="card-title">Daftar Buku</h4>
-                <a href="/books/create" class="btn btn-primary">
-                    <i class="bi bi-plus-lg"></i> Tambah Buku
-                </a>
+                <h4 class="card-title">Daftar Koleksi Buku</h4>
+                <a href="/books/create" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Tambah Buku</a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <!-- id="table1" akan memicu DataTables bawaan template Mazer -->
                     <table class="table table-striped" id="table1">
                         <thead>
                             <tr>
                                 <th>Sampul</th>
-                                <th>Judul Buku</th>
+                                <th>Judul & Penulis</th>
                                 <th>Kategori</th>
-                                <th>Penulis</th>
                                 <th>Tahun</th>
-                                <th>Stok (Ada / Total)</th>
-                                <th>Aksi</th>
+                                <th>Stok Total</th>
+                                <th>Stok Tersedia</th>
+                                <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($books as $book)
+                            @foreach ($books as $book)
                                 <tr>
                                     <td>
                                         @if($book->cover_image)
-                                            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="Sampul" class="rounded" width="50" height="70" style="object-fit: cover;">
+                                            <img src="{{ asset('storage/' . $book->cover_image) }}" alt="Sampul" class="rounded" width="40" height="60" style="object-fit: cover;">
                                         @else
-                                            <div class="bg-light rounded d-flex justify-content-center align-items-center" style="width: 50px; height: 70px;">
+                                            <div class="bg-light rounded d-flex justify-content-center align-items-center" style="width: 40px; height: 60px;">
                                                 <i class="bi bi-book text-secondary"></i>
                                             </div>
                                         @endif
                                     </td>
                                     <td>
                                         <strong>{{ $book->title }}</strong><br>
-                                        <small class="text-muted">ISBN: {{ $book->isbn }}</small>
+                                        <small class="text-muted">{{ $book->author }} (ISBN: {{ $book->isbn }})</small>
                                     </td>
-                                    <td>{{ $book->category->name ?? '-' }}</td>
-                                    <td>{{ $book->author }}</td>
+                                    <td><span class="badge bg-light-primary">{{ $book->category->name ?? '-' }}</span></td>
                                     <td>{{ $book->published_year }}</td>
+                                    <td>{{ $book->total_stock }}</td>
                                     <td>
-                                        <span class="badge {{ $book->available_stock > 0 ? 'bg-success' : 'bg-danger' }}">
-                                            {{ $book->available_stock }} / {{ $book->total_stock }}
-                                        </span>
+                                        @if($book->available_stock > 0)
+                                            <span class="badge bg-success">{{ $book->available_stock }} Tersedia</span>
+                                        @else
+                                            <span class="badge bg-danger">Habis</span>
+                                        @endif
                                     </td>
-                                    <td>
-                                        <div class="d-flex gap-1">
-                                            <!-- Tombol Edit (Kuning) -->
-                                            <a href="/books/{{ $book->id }}/edit" class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <!-- Tombol Hapus (Merah) -->
-                                            <form action="/books/{{ $book->id }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus buku ini?');">
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <a href="/books/{{ $book->id }}/edit" class="btn btn-sm btn-warning"><i class="bi bi-pencil-square"></i></a>
+                                            <form action="/books/{{ $book->id }}" method="POST" onsubmit="return confirm('Hapus buku ini?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
+                                                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
                                             </form>
                                         </div>
                                     </td>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center">Belum ada data buku.</td>
-                                </tr>
-                            @endforelse
+                            @endforeach
                         </tbody>
                     </table>
                 </div>

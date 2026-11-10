@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'Asia/Jakarta', // <-- TIMEZONE PDF LOKAL DIUBAH DI SINI
 
     /*
     |--------------------------------------------------------------------------

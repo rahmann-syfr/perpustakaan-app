@@ -27,6 +27,7 @@ class BookController extends Controller
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'author' => 'required|string|max:255',
+            'publisher' => 'nullable|string|max:255', // Validasi penerbit ditambahkan
             'isbn' => 'required|string|unique:books,isbn',
             'published_year' => 'required|integer',
             'total_stock' => 'required|integer|min:1',
@@ -42,6 +43,7 @@ class BookController extends Controller
             'title' => $request->title,
             'category_id' => $request->category_id,
             'author' => $request->author,
+            'publisher' => $request->publisher, // Menyimpan penerbit
             'isbn' => $request->isbn,
             'published_year' => $request->published_year,
             'total_stock' => $request->total_stock,
@@ -69,6 +71,7 @@ class BookController extends Controller
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'author' => 'required|string|max:255',
+            'publisher' => 'nullable|string|max:255', // Validasi penerbit ditambahkan
             'isbn' => 'required|string|unique:books,isbn,' . $id, 
             'published_year' => 'required|integer',
             'total_stock' => 'required|integer|min:1',
@@ -93,6 +96,7 @@ class BookController extends Controller
             'title' => $request->title,
             'category_id' => $request->category_id,
             'author' => $request->author,
+            'publisher' => $request->publisher, // Update penerbit
             'isbn' => $request->isbn,
             'published_year' => $request->published_year,
             'total_stock' => $request->total_stock,
@@ -136,5 +140,22 @@ class BookController extends Controller
         $categories = Category::all();
 
         return view('katalog', compact('books', 'categories'));
+    }
+
+    // Fungsi khusus untuk merespons AJAX pencarian katalog secara live
+    public function searchAjax(Request $request)
+    {
+        $query = $request->search;
+        
+        if (strlen($query) >= 3) {
+            $books = Book::where('title', 'like', "%{$query}%")
+                         ->orWhere('author', 'like', "%{$query}%")
+                         ->select('id', 'title', 'author')
+                         ->take(5) // Batasi maksimal 5 hasil di dropdown
+                         ->get();
+            return response()->json($books);
+        }
+        
+        return response()->json([]);
     }
 }

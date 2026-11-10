@@ -7,31 +7,32 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    // Menampilkan halaman daftar kategori
     public function index()
     {
-        $categories = Category::latest()->get();
+        $categories = Category::orderBy('name', 'asc')->get();
         return view('categories.index', compact('categories'));
     }
 
-    // Menyimpan kategori baru
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255'
-        ]);
-
-        Category::create([
-            'name' => $request->name
-        ]);
-
-        return redirect('/categories')->with('success', 'Kategori berhasil ditambahkan!');
+        $request->validate(['name' => 'required|string|max:255']);
+        Category::create(['name' => $request->name]);
+        return redirect('/categories')->with('success', 'Kategori baru berhasil ditambahkan!');
     }
 
-    // Menghapus kategori
+    // Fungsi menyimpan perubahan edit dari Modal
+    public function update(Request $request, $id)
+    {
+        $request->validate(['name' => 'required|string|max:255']);
+        $category = Category::findOrFail($id);
+        $category->update(['name' => $request->name]);
+        
+        return redirect('/categories')->with('success', 'Kategori berhasil diperbarui!');
+    }
+
     public function destroy($id)
     {
-        Category::destroy($id);
+        Category::findOrFail($id)->delete();
         return redirect('/categories')->with('success', 'Kategori berhasil dihapus!');
     }
 }

@@ -12,7 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class BorrowingController extends Controller
 {
-    // Menampilkan riwayat transaksi DENGAN FILTER (Untuk Admin)
+    // Menampilkan riwayat transaksi DENGAN FILTER (Untuk Admin/Petugas)
     public function index(Request $request)
     {
         $query = Borrowing::with(['user', 'admin', 'book'])->latest();
@@ -51,6 +51,7 @@ class BorrowingController extends Controller
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'book_id' => 'required|exists:books,id',
+            'duration_days' => 'required|integer|min:1|max:30', // Durasi pinjam dinamis sesuai instruksi dosen
         ]);
 
         $book = Book::findOrFail($request->book_id);
@@ -59,12 +60,16 @@ class BorrowingController extends Controller
             return back()->withErrors(['book_id' => 'Stok buku ini sedang kosong.']);
         }
 
+        $borrowDate = Carbon::now();
+        $dueDate = Carbon::now()->addDays($request->duration_days);
+
         Borrowing::create([
             'user_id' => $request->user_id,
             'admin_id' => Auth::id(),
             'book_id' => $request->book_id,
-            'borrow_date' => Carbon::now(),
-            'due_date' => Carbon::now()->addDays(7),
+            'borrow_date' => $borrowDate,
+            'due_date' => $dueDate,
+            'duration_days' => $request->duration_days,
             'status' => 'borrowed',
         ]);
 
@@ -72,9 +77,10 @@ class BorrowingController extends Controller
         return redirect('/borrowings')->with('success', 'Buku berhasil dipinjamkan!');
     }
 
-    public function returnBook($id)
+    // Memproses Pengembalian atau Status Buku Hilang
+    public function returnBook(Request $request, $id)
     {
-        $borrowing = Borrowing::findOrFail($id);
+        $borrowing = Borrowing::with('book')->findOrFail($id);
 
         if ($borrowing->status != 'borrowed') {
             return back()->withErrors(['error' => 'Buku ini sudah dikembalikan atau statusnya tidak valid.']);
@@ -83,14 +89,26 @@ class BorrowingController extends Controller
         $now = Carbon::now();
         $dueDate = Carbon::parse($borrowing->due_date);
         
+        $status = $request->input('status', 'returned'); // 'returned' atau 'lost'
         $fineAmount = 0;
-        $status = 'returned';
 
-        if ($now->greaterThan($dueDate)) {
-            $daysLate = $dueDate->diffInDays($now);
-            $finePerDay = 2000;
-            $fineAmount = $daysLate * $finePerDay;
-            $status = 'overdue'; 
+        if ($status == 'returned') {
+            // Hitung denda keterlambatan jika melewati tenggat waktu
+            if ($now->greaterThan($dueDate)) {
+                $daysLate = $dueDate->diffInDays($now);
+                // Mengambil besaran denda spesifik dari masing-masing judul buku
+                $finePerDay = $borrowing->book->fine_per_day ?? 1000;
+                $fineAmount = $daysLate * $finePerDay;
+                $status = 'overdue'; 
+            }
+
+            // Kembalikan stok buku karena fisik buku kembali
+            $borrowing->book->increment('available_stock');
+        } else {
+            // Jika status buku HILANG, kenakan denda ganti rugi (default Rp50.000 atau kustom)
+            $fineAmount = $request->input('lost_fine_amount', 50000);
+            $status = 'lost';
+            // Stok tidak dikembalikan karena buku hilang
         }
 
         $borrowing->update([
@@ -99,21 +117,18 @@ class BorrowingController extends Controller
             'fine_amount' => $fineAmount,
         ]);
 
-        $borrowing->book->increment('available_stock');
-
         $message = $fineAmount > 0 
-            ? "Buku dikembalikan. Terdapat denda sebesar Rp" . number_format($fineAmount, 0, ',', '.') 
+            ? "Status transaksi diperbarui. Terdapat tagihan/denda sebesar Rp" . number_format($fineAmount, 0, ',', '.') 
             : "Buku berhasil dikembalikan tepat waktu.";
 
         return redirect('/borrowings')->with('success', $message);
     }
 
-    // Menghasilkan PDF yang MENGIKUTI FILTER yang sedang aktif
+    // Menghasilkan PDF yang MENGIKUTI FILTER yang sedang aktif (Timezone Lokal Asia/Jakarta)
     public function reportPdf(Request $request)
     {
         $query = Borrowing::with(['user', 'admin', 'book'])->orderBy('borrow_date', 'desc');
 
-        // Terapkan filter yang sama persis dengan tabel
         if ($request->has('filter') && $request->filter != '') {
             $now = Carbon::now();
             if ($request->filter == 'hari_ini') {
@@ -137,12 +152,14 @@ class BorrowingController extends Controller
         return $pdf->stream('laporan-sirkulasi-perpusapp.pdf');
     }
 
+    // Method khusus untuk Halaman Riwayat Saya
     public function history()
     {
-        $borrowings = Borrowing::with(['book', 'admin'])
-                    ->where('user_id', Auth::id())
-                    ->latest()
-                    ->get();
-        return view('riwayat', compact('borrowings'));
+        $borrowings = Borrowing::where('user_id', Auth::id())
+                        ->with('book')
+                        ->orderBy('created_at', 'desc')
+                        ->get();
+                        
+        return view('riwayat', compact('borrowings')); 
     }
 }

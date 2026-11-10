@@ -29,25 +29,64 @@
                             <tr>
                                 <th>No</th>
                                 <th>Nama Kategori</th>
-                                <th>Aksi</th>
+                                <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($categories as $index => $category)
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
-                                    <td>{{ $category->name }}</td>
+                                    <td><strong>{{ $category->name }}</strong></td>
                                     <td>
-                                        <!-- Form Hapus Kategori -->
-                                        <form action="/categories/{{ $category->id }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash-fill"></i> Hapus
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <!-- Tombol Edit (Memicu Modal Edit) -->
+                                            <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ $category->id }}">
+                                                <i class="bi bi-pencil-square"></i> Edit
                                             </button>
-                                        </form>
+
+                                            <!-- Form Hapus Kategori -->
+                                            <form action="/categories/{{ $category->id }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="bi bi-trash-fill"></i> Hapus
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
+
+                                <!-- Modal Edit Kategori -->
+                                <div class="modal fade text-left" id="editModal{{ $category->id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $category->id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-warning">
+                                                <h4 class="modal-title text-white" id="editModalLabel{{ $category->id }}">Edit Kategori</h4>
+                                                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </div>
+                                            <form action="/categories/{{ $category->id }}" method="POST">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="modal-body">
+                                                    <label>Nama Kategori: </label>
+                                                    <div class="form-group mt-2">
+                                                        <input type="text" name="name" class="form-control" value="{{ $category->name }}" required>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-light-secondary" data-bs-dismiss="modal">
+                                                        <span class="d-sm-block">Batal</span>
+                                                    </button>
+                                                    <button type="submit" class="btn btn-warning ml-1">
+                                                        <span class="d-sm-block">Simpan Perubahan</span>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             @empty
                                 <tr>
                                     <td colspan="3" class="text-center">Belum ada data kategori.</td>

@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    // Menampilkan daftar anggota
+    // Menampilkan daftar semua pengguna sistem
     public function index()
     {
-        $users = User::where('role', 'anggota')->latest()->get();
+        $users = User::latest()->get(); // Menampilkan admin, petugas, dan anggota
         return view('users.index', compact('users'));
     }
 
@@ -28,16 +28,17 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+            'role' => 'required|in:admin,petugas,anggota' // Validasi role ditambahkan
         ]);
 
         User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'anggota', 
+            'role' => $request->role, // Menyimpan role sesuai pilihan di form
         ]);
 
-        return redirect('/users')->with('success', 'Data anggota berhasil ditambahkan!');
+        return redirect('/users')->with('success', 'Data user berhasil ditambahkan!');
     }
 
     // Menampilkan form edit anggota
@@ -55,12 +56,14 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $id,
-            'password' => 'nullable|string|min:8', // Password opsional saat diubah
+            'password' => 'nullable|string|min:8', 
+            'role' => 'required|in:admin,petugas,anggota' // Validasi role ditambahkan
         ]);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
+            'role' => $request->role, // Update role sesuai inputan
         ];
 
         // Jika password diisi, update passwordnya
@@ -70,13 +73,13 @@ class UserController extends Controller
 
         $user->update($data);
 
-        return redirect('/users')->with('success', 'Data anggota berhasil diperbarui!');
+        return redirect('/users')->with('success', 'Data user berhasil diperbarui!');
     }
 
     // Menghapus anggota
     public function destroy($id)
     {
         User::destroy($id);
-        return redirect('/users')->with('success', 'Data anggota berhasil dihapus!');
+        return redirect('/users')->with('success', 'Data user berhasil dihapus!');
     }
 }

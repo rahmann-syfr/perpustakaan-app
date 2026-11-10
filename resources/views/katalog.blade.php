@@ -9,8 +9,13 @@
         <div class="card">
             <div class="card-body">
                 <form action="/katalog" method="GET" class="row g-3">
-                    <div class="col-md-5">
-                        <input type="text" class="form-control" name="search" placeholder="Cari judul buku atau nama penulis..." value="{{ request('search') }}">
+                    <div class="col-md-5 position-relative">
+                        <input type="text" class="form-control" id="searchInput" name="search" placeholder="Cari judul buku atau nama penulis..." value="{{ request('search') }}" autocomplete="off">
+                        
+                        <!-- Tempat Dropdown Hasil Live Search Muncul -->
+                        <ul id="searchResults" class="dropdown-menu w-100 shadow-sm mt-1" style="display: none; position: absolute; z-index: 1050; max-height: 300px; overflow-y: auto;">
+                            <!-- Hasil AJAX disuntikkan ke sini -->
+                        </ul>
                     </div>
                     <div class="col-md-5">
                         <select class="form-select" name="category">
@@ -70,4 +75,55 @@
         </div>
     @endforelse
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+
+    if(searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value;
+
+            // Cek jika panjang ketikan minimal 3 huruf
+            if (query.length >= 3) {
+                fetch(`/katalog/search-ajax?search=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        searchResults.innerHTML = '';
+                        
+                        if (data.length > 0) {
+                            data.forEach(book => {
+                                const li = document.createElement('li');
+                                // Ketika diklik, otomatis memfilter halaman dengan judul buku tersebut
+                                li.innerHTML = `
+                                    <a class="dropdown-item py-2 border-bottom" href="/katalog?search=${encodeURIComponent(book.title)}">
+                                        <div class="fw-bold text-primary">${book.title}</div>
+                                        <small class="text-muted"><i class="bi bi-pen"></i> ${book.author}</small>
+                                    </a>
+                                `;
+                                searchResults.appendChild(li);
+                            });
+                            searchResults.style.display = 'block';
+                        } else {
+                            searchResults.innerHTML = '<li class="dropdown-item text-muted py-2 fst-italic">Buku tidak ditemukan...</li>';
+                            searchResults.style.display = 'block';
+                        }
+                    })
+                    .catch(error => console.error('Error fetching data:', error));
+            } else {
+                // Sembunyikan dropdown jika huruf kurang dari 3
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Menghilangkan dropdown jika user mengklik area lain di luar form pencarian
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
 @endsection

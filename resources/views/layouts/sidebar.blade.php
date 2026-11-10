@@ -36,7 +36,7 @@
                     </a>
                 </li>
 
-                <!-- Menu Katalog (Semua Role - Posisikan di LUAR pengecekan role admin) -->
+                <!-- Menu Katalog (Semua Role) -->
                 <li class="sidebar-item {{ Request::is('katalog') ? 'active' : '' }}">
                     <a href="/katalog" class='sidebar-link'>
                         <i class="bi bi-journal-bookmark-fill"></i>
@@ -44,7 +44,7 @@
                     </a>
                 </li>
 
-                <!-- Menu Riwayat (Semua Role - Posisikan di LUAR pengecekan role admin) -->
+                <!-- Menu Riwayat (Semua Role) -->
                 <li class="sidebar-item {{ Request::is('riwayat') ? 'active' : '' }}">
                     <a href="/riwayat" class='sidebar-link'>
                         <i class="bi bi-clock-history"></i>
@@ -52,8 +52,8 @@
                     </a>
                 </li>
 
-                <!-- Menu Khusus Admin & Superadmin -->
-                @if(Auth::user()->role != 'anggota')
+                <!-- Menu Khusus Admin & Petugas -->
+                @if(Auth::user()->role == 'admin' || Auth::user()->role == 'petugas')
                 <li class="sidebar-item {{ Request::is('categories*') ? 'active' : '' }}">
                     <a href="/categories" class='sidebar-link'>
                         <i class="bi bi-tags-fill"></i>
@@ -68,17 +68,20 @@
                     </a>
                 </li>
 
-                <li class="sidebar-item {{ Request::is('users*') ? 'active' : '' }}">
-                    <a href="/users" class='sidebar-link'>
-                        <i class="bi bi-people-fill"></i>
-                        <span>Data Anggota</span>
-                    </a>
-                </li>
-
                 <li class="sidebar-item {{ Request::is('borrowings*') ? 'active' : '' }}">
                     <a href="/borrowings" class='sidebar-link'>
                         <i class="bi bi-arrow-left-right"></i>
                         <span>Sirkulasi</span>
+                    </a>
+                </li>
+                @endif
+
+                <!-- Menu Khusus HANYA Admin -->
+                @if(Auth::user()->role == 'admin')
+                <li class="sidebar-item {{ Request::is('users*') ? 'active' : '' }}">
+                    <a href="/users" class='sidebar-link'>
+                        <i class="bi bi-people-fill"></i>
+                        <span>Manajemen User</span>
                     </a>
                 </li>
                 @endif
