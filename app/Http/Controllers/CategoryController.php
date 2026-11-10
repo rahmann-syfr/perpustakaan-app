@@ -7,6 +7,17 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            // Jika bukan halaman index (lihat data) DAN yang login bukan admin, tolak akses
+            if (request()->route()->getName() !== 'categories.index' && auth()->check() && auth()->user()->role !== 'admin') {
+                abort(403, 'Petugas hanya diizinkan melihat data kategori.');
+            }
+            return $next($request);
+        });
+    }
+    
     public function index()
     {
         $categories = Category::orderBy('name', 'asc')->get();

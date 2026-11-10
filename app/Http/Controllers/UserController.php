@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+    // Jika Petugas mencoba akses via URL langsung, akan ditolak HTTP 403
+    if (auth()->check() && auth()->user()->role !== 'admin') {
+        abort(403, 'Hanya Admin yang diizinkan mengelola User.');
+    }
+}
+
     // Menampilkan daftar semua pengguna sistem
     public function index()
     {

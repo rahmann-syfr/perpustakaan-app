@@ -7,13 +7,14 @@ use App\Http\Controllers\BookController;
 use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController; 
+use App\Http\Controllers\MemberController; // Tambahkan MemberController jika ada
 
 // Route untuk yang belum login (Guest)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'login'])->name('login');
     Route::post('/login', [AuthController::class, 'authenticate']);
     
-    // Route untuk Katalog (Bisa diakses tanpa login jika diinginkan)
+    // Route untuk Katalog
     Route::get('/katalog', [BookController::class, 'katalog']);
     Route::get('/katalog/search-ajax', [BookController::class, 'searchAjax']);
 });
@@ -27,25 +28,31 @@ Route::middleware('auth')->group(function () {
     Route::get('/katalog', [BookController::class, 'katalog']);
     Route::get('/riwayat', [BorrowingController::class, 'history']);
 
-    // HANYA bisa diakses oleh ADMIN (Kendali Penuh Manajemen User)
+    // HANYA bisa diakses oleh ADMIN (User Management & Akses Ubah/Hapus Kategori)
     Route::middleware('role:admin')->group(function () {
-        // Route Manajemen Anggota & Petugas
+        // Route Manajemen User (Admin & Petugas)
         Route::get('/users', [UserController::class, 'index']);
         Route::get('/users/create', [UserController::class, 'create']);
         Route::post('/users', [UserController::class, 'store']);
         Route::get('/users/{id}/edit', [UserController::class, 'edit']);
         Route::put('/users/{id}', [UserController::class, 'update']);
         Route::delete('/users/{id}', [UserController::class, 'destroy']);
-    });
 
-    // Bisa diakses oleh ADMIN & PETUGAS (Operasional Perpustakaan)
-    Route::middleware('role:admin,petugas')->group(function () {
-        // Route Kategori (Sudah ditambah rute Edit dan Update)
-        Route::get('/categories', [CategoryController::class, 'index']);
+        // Khusus Admin: Tambah, Edit, Update, dan Hapus Kategori
         Route::post('/categories', [CategoryController::class, 'store']);
         Route::get('/categories/{id}/edit', [CategoryController::class, 'edit']); 
         Route::put('/categories/{id}', [CategoryController::class, 'update']);    
         Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+    });
+
+    // Bisa diakses oleh ADMIN & PETUGAS (Operasional Perpustakaan)
+    Route::middleware('role:petugas')->group(function () {
+        // Petugas & Admin HANYA BISA MELIHAT daftar kategori
+        Route::get('/categories', [CategoryController::class, 'index']);
+
+        // Route Anggota (Member Management)
+        Route::resource('members', MemberController::class);
+
         // Route Buku
         Route::get('/books', [BookController::class, 'index']);
         Route::get('/books/create', [BookController::class, 'create']);
