@@ -40,8 +40,12 @@
                                             <span class="badge bg-warning">Sedang Dipinjam</span>
                                         @elseif($item->status == 'returned')
                                             <span class="badge bg-success">Dikembalikan</span>
-                                        @else
+                                        @elseif($item->status == 'overdue')
                                             <span class="badge bg-danger">Terlambat</span>
+                                        @elseif($item->status == 'lost')
+                                            <span class="badge bg-dark">Hilang</span>
+                                        @else
+                                            <span class="badge bg-secondary">{{ ucfirst($item->status) }}</span>
                                         @endif
                                     </td>
                                     <td>
@@ -53,15 +57,18 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="7" class="text-center py-4">
-                                        <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
-                                        <p class="mt-2">Belum ada riwayat peminjaman.</p>
-                                    </td>
-                                </tr>
+                                <!-- Tidak perlu pakai baris <tr> khusus colspan jika kosong agar DataTables tidak error column count, atau biarkan kosong array datanya -->
                             @endforelse
                         </tbody>
                     </table>
+                    
+                    <!-- Pesan kosong alternatif agar aman dari DataTables warning -->
+                    @if($borrowings->isEmpty())
+                        <div class="text-center py-4">
+                            <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                            <p class="mt-2 text-muted">Belum ada riwayat peminjaman.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
