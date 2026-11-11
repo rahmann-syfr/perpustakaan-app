@@ -26,7 +26,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($borrowings as $index => $item)
+                            @foreach ($borrowings as $index => $item)
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
                                     <td><strong>{{ $item->book->title ?? 'Buku Dihapus' }}</strong></td>
@@ -56,13 +56,11 @@
                                         @endif
                                     </td>
                                 </tr>
-                            @empty
-                                <!-- Tidak perlu pakai baris <tr> khusus colspan jika kosong agar DataTables tidak error column count, atau biarkan kosong array datanya -->
-                            @endforelse
+                            @endforeach
                         </tbody>
                     </table>
                     
-                    <!-- Pesan kosong alternatif agar aman dari DataTables warning -->
+                    <!-- Pesan kosong ditaruh di luar tabel agar DataTables tidak error column count -->
                     @if($borrowings->isEmpty())
                         <div class="text-center py-4">
                             <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
