@@ -6,7 +6,6 @@ use App\Enums\Role;
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\FinePayment;
-use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -91,16 +90,6 @@ class DashboardController extends Controller
             ->overdue()
             ->count();
 
-        $reservationStats = [
-            'pending' => Reservation::query()
-                ->when(! $isStaff, fn ($query) => $query->where('user_id', $user->id))
-                ->pending()
-                ->count(),
-            'total' => Reservation::query()
-                ->when(! $isStaff, fn ($query) => $query->where('user_id', $user->id))
-                ->count(),
-        ];
-
         $paidFineTotal = (int) FinePayment::query()
             ->when(! $isStaff, fn ($query) => $query->where('user_id', $user->id))
             ->sum('amount');
@@ -120,7 +109,6 @@ class DashboardController extends Controller
             'recentActivities' => $recentActivities,
             'overdueBorrowings' => $overdueBorrowings,
             'overdueCount' => $overdueCount,
-            'reservationStats' => $reservationStats,
             'paidFineTotal' => $paidFineTotal,
             'trendChart' => $this->trendChart($user->id, $isStaff),
             'categoryChart' => $this->categoryChart($user->id, $isStaff),

@@ -57,10 +57,6 @@ class ExtendBorrowing
                 'extended_at' => now(),
             ]);
 
-            // Pengingat jatuh tempo sebelumnya tidak lagi relevan karena
-            // tenggat baru saja digeser.
-            $borrowing->forceFill(['reminder_sent_at' => null])->save();
-
             if ($adminId !== null) {
                 $borrowing->forceFill(['admin_id' => $adminId])->save();
             }

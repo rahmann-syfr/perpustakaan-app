@@ -5,9 +5,7 @@ namespace App\Actions;
 use App\Enums\BorrowingStatus;
 use App\Models\Book;
 use App\Models\Borrowing;
-use App\Models\Reservation;
 use App\Models\SystemSetting;
-use App\Notifications\BookAvailable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -62,27 +60,7 @@ class ReturnBook
                 'fine_amount' => $fineAmount,
             ]);
 
-            // Anggota yang menunggu buku ini diberi tahu bahwa buku tersedia.
-            if ($book !== null && $status === BorrowingStatus::Returned) {
-                $this->notifyWaitingMembers($book);
-            }
-
             return $borrowing->refresh();
         });
-    }
-
-    /**
-     * Memberi tahu anggota yang memiliki reservasi aktif atas buku tersebut.
-     */
-    private function notifyWaitingMembers(Book $book): void
-    {
-        Reservation::query()
-            ->with('user')
-            ->pending()
-            ->where('book_id', $book->id)
-            ->get()
-            ->each(function (Reservation $reservation) use ($book): void {
-                $reservation->user?->notify(new BookAvailable($book));
-            });
     }
 }

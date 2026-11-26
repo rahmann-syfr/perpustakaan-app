@@ -64,19 +64,6 @@ class Book extends Model
             ->whereNull('return_date');
     }
 
-    public function reviews(): HasMany
-    {
-        return $this->hasMany(Review::class);
-    }
-
-    /**
-     * Rata-rata rating buku (null bila belum ada ulasan).
-     */
-    public function averageRating(): ?float
-    {
-        return $this->reviews()->avg('rating');
-    }
-
     public function isOutOfStock(): bool
     {
         return $this->available_stock < 1;
