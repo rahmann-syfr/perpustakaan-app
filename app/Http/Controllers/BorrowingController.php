@@ -133,14 +133,16 @@ class BorrowingController extends Controller
         Borrowing $borrowing,
         ExtendBorrowing $extendBorrowing
     ): RedirectResponse {
+        $days = $request->integer('days');
+
         try {
-            $updated = $extendBorrowing->handle($borrowing, $request->user()->id);
+            $updated = $extendBorrowing->handle($borrowing, $request->user()->id, $days);
         } catch (ValidationException $exception) {
             return back()->withErrors($exception->errors());
         }
 
         return redirect()->route('borrowings.index')
-            ->with('success', 'Peminjaman diperpanjang sampai '.$updated->due_date?->format('d M Y').'.');
+            ->with('success', 'Peminjaman diperpanjang '.$days.' hari sampai '.$updated->due_date?->format('d M Y').'.');
     }
 
     /**

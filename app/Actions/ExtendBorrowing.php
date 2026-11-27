@@ -18,9 +18,9 @@ class ExtendBorrowing
     /**
      * @throws ValidationException
      */
-    public function handle(Borrowing $borrowing, ?int $adminId = null): Borrowing
+    public function handle(Borrowing $borrowing, ?int $adminId = null, ?int $days = null): Borrowing
     {
-        return DB::transaction(function () use ($borrowing, $adminId): Borrowing {
+        return DB::transaction(function () use ($borrowing, $adminId, $days): Borrowing {
             /** @var Borrowing $borrowing */
             $borrowing = Borrowing::query()
                 ->whereKey($borrowing->id)
@@ -47,7 +47,14 @@ class ExtendBorrowing
                 ]);
             }
 
-            $extensionDays = SystemSetting::getInt('durasi_perpanjangan', 7);
+            $extensionDays = $days ?? SystemSetting::getInt('durasi_perpanjangan', 7);
+
+            if ($extensionDays < 1) {
+                throw ValidationException::withMessages([
+                    'days' => 'Durasi perpanjangan minimal 1 hari.',
+                ]);
+            }
+
             $dueDate = $borrowing->due_date?->copy()->startOfDay() ?? now()->startOfDay();
 
             $borrowing->update([
