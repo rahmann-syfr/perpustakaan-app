@@ -206,57 +206,6 @@ it('menolak pengembalian transaksi yang sudah selesai', function () {
         ->assertSessionHasErrors('status');
 });
 
-it('menampilkan riwayat milik anggota sendiri saja', function () {
-    $anggota = User::factory()->anggota()->create();
-    $anggotaLain = User::factory()->anggota()->create();
-
-    Borrowing::factory()->create(['user_id' => $anggota->id]);
-    Borrowing::factory()->create(['user_id' => $anggotaLain->id]);
-
-    $this->actingAs($anggota)
-        ->get(route('riwayat.index'))
-        ->assertOk()
-        ->assertViewHas('borrowings', fn ($borrowings) => $borrowings->count() === 1);
-});
-
-it('memungkinkan anggota meminjam buku dari katalog', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create(['total_stock' => 2, 'available_stock' => 2]);
-
-    $this->actingAs($anggota)
-        ->post(route('katalog.pinjam', $book))
-        ->assertRedirect(route('riwayat.index'))
-        ->assertSessionHas('success');
-
-    expect($book->fresh()->available_stock)->toBe(1);
-
-    $this->assertDatabaseHas('borrowings', [
-        'user_id' => $anggota->id,
-        'book_id' => $book->id,
-        'status' => BorrowingStatus::Borrowed->value,
-    ]);
-});
-
-it('memungkinkan anggota mengembalikan buku dari riwayat', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create(['total_stock' => 1, 'available_stock' => 0]);
-    $borrowing = Borrowing::factory()->create([
-        'user_id' => $anggota->id,
-        'book_id' => $book->id,
-        'admin_id' => null,
-    ]);
-
-    $this->actingAs($anggota)
-        ->post(route('riwayat.kembalikan', $borrowing))
-        ->assertRedirect(route('riwayat.index'))
-        ->assertSessionHas('success');
-
-    $borrowing->refresh();
-
-    expect($borrowing->status)->toBe(BorrowingStatus::Returned)
-        ->and($book->fresh()->available_stock)->toBe(1);
-});
-
 it('dashboard anggota tidak menampilkan kartu total anggota', function () {
     $anggota = User::factory()->anggota()->create();
 

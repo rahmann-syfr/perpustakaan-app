@@ -8,7 +8,6 @@ use App\Models\Book;
 use App\Models\Category;
 use App\Models\SystemSetting;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,16 +16,35 @@ use Illuminate\View\View;
 class BookController extends Controller
 {
     /**
-     * Menampilkan daftar buku.
+     * Menampilkan daftar buku dengan pencarian dan filter kategori.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'integer', 'exists:categories,id'],
+        ]);
+
         $books = Book::with('category')
+            ->when(
+                $filters['search'] ?? null,
+                fn (Builder $query, string $search) => $query->where(function (Builder $query) use ($search): void {
+                    $query->where('title', 'like', "%{$search}%")
+                        ->orWhere('author', 'like', "%{$search}%")
+                        ->orWhere('isbn', 'like', "%{$search}%");
+                })
+            )
+            ->when(
+                $filters['category'] ?? null,
+                fn (Builder $query, int $categoryId) => $query->where('category_id', $categoryId)
+            )
             ->latest()
             ->paginate(15)
             ->withQueryString();
 
-        return view('books.index', compact('books'));
+        $categories = Category::orderBy('name')->get();
+
+        return view('books.index', compact('books', 'categories'));
     }
 
     /**
@@ -36,14 +54,7 @@ class BookController extends Controller
     {
         $book->load('category');
 
-        $reviews = $book->reviews()->with('user')->latest()->take(5)->get();
-        $averageRating = $book->reviews()->avg('rating');
-        $totalReviews = $book->reviews()->count();
-        $myReview = auth()->check()
-            ? $book->reviews()->where('user_id', auth()->id())->first()
-            : null;
-
-        return view('books.show', compact('book', 'reviews', 'averageRating', 'totalReviews', 'myReview'));
+        return view('books.show', compact('book'));
     }
 
     /**
@@ -145,64 +156,6 @@ class BookController extends Controller
 
         return redirect()->route('books.index')
             ->with('success', 'Buku beserta sampulnya berhasil dihapus!');
-    }
-
-    /**
-     * Katalog buku yang dapat dicari dan difilter.
-     */
-    public function katalog(Request $request): View
-    {
-        $filters = $request->validate([
-            'search' => ['nullable', 'string', 'max:255'],
-            'category' => ['nullable', 'integer', 'exists:categories,id'],
-        ]);
-
-        $books = Book::with('category')
-            ->withAvg('reviews', 'rating')
-            ->withCount('reviews')
-            ->when(
-                $filters['search'] ?? null,
-                fn (Builder $query, string $search) => $query->where(function (Builder $query) use ($search): void {
-                    $query->where('title', 'like', "%{$search}%")
-                        ->orWhere('author', 'like', "%{$search}%");
-                })
-            )
-            ->when(
-                $filters['category'] ?? null,
-                fn (Builder $query, int $categoryId) => $query->where('category_id', $categoryId)
-            )
-            ->latest()
-            ->paginate(12)
-            ->withQueryString();
-
-        $categories = Category::orderBy('name')->get();
-        $maxLoanDays = SystemSetting::getInt('maksimal_hari_pinjam', 7);
-
-        return view('katalog', compact('books', 'categories', 'maxLoanDays'));
-    }
-
-    /**
-     * Respon JSON untuk live search pada katalog.
-     */
-    public function searchAjax(Request $request): JsonResponse
-    {
-        $search = trim((string) $request->query('search', ''));
-
-        if (mb_strlen($search) < 3) {
-            return response()->json([]);
-        }
-
-        $books = Book::query()
-            ->where(function (Builder $query) use ($search): void {
-                $query->where('title', 'like', "%{$search}%")
-                    ->orWhere('author', 'like', "%{$search}%");
-            })
-            ->select(['id', 'title', 'author'])
-            ->orderBy('title')
-            ->take(5)
-            ->get();
-
-        return response()->json($books);
     }
 
     /**

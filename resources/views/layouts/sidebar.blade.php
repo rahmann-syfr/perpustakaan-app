@@ -43,43 +43,10 @@
                     </a>
                 </li>
 
-                <li class="perpus-nav-item {{ Request::is('katalog*') ? 'active' : '' }}">
-                    <a href="{{ route('katalog.index') }}" class="perpus-nav-link">
-                        <i class="bi bi-journal-bookmark-fill"></i>
-                        <span>Katalog Buku</span>
-                    </a>
-                </li>
-
-                <li class="perpus-nav-item {{ Request::is('riwayat*') ? 'active' : '' }}">
-                    <a href="{{ route('riwayat.index') }}" class="perpus-nav-link">
-                        <i class="bi bi-clock-history"></i>
-                        <span>Riwayat Saya</span>
-                    </a>
-                </li>
-
-                <li class="perpus-nav-item {{ Request::is('reservasi*') ? 'active' : '' }}">
-                    <a href="{{ route('reservations.index') }}" class="perpus-nav-link">
-                        <i class="bi bi-bookmark-heart-fill"></i>
-                        <span>Reservasi Buku</span>
-                    </a>
-                </li>
-
                 <li class="perpus-nav-item {{ Request::is('profil*') ? 'active' : '' }}">
                     <a href="{{ route('profile.show') }}" class="perpus-nav-link">
-                        <i class="bi bi-person-vcard-fill"></i>
-                        <span>Kartu & Profil</span>
-                    </a>
-                </li>
-
-                <li class="perpus-nav-item {{ Request::is('notifikasi*') ? 'active' : '' }}">
-                    <a href="{{ route('notifications.index') }}" class="perpus-nav-link">
-                        <i class="bi bi-bell-fill"></i>
-                        <span>Notifikasi</span>
-                        @if(auth()->user()->unreadNotifications->isNotEmpty())
-                            <span class="badge bg-danger rounded-pill ms-auto perpus-notification-dot">
-                                {{ auth()->user()->unreadNotifications->count() }}
-                            </span>
-                        @endif
+                        <i class="bi bi-person-circle"></i>
+                        <span>Profil Saya</span>
                     </a>
                 </li>
 

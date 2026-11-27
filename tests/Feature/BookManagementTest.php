@@ -99,31 +99,21 @@ it('menolak penghapusan buku yang masih dipinjam', function () {
     $this->assertDatabaseHas('books', ['id' => $book->id]);
 });
 
-it('mencari katalog berdasarkan kata kunci', function () {
+it('mencari data buku berdasarkan kata kunci dan filter kategori', function () {
     $petugas = User::factory()->petugas()->create();
-    Category::factory()->create(['name' => 'Pemrograman']);
-    Category::factory()->create(['name' => 'Sastra']);
+    $pemrograman = Category::factory()->create(['name' => 'Pemrograman']);
+    $sastra = Category::factory()->create(['name' => 'Sastra']);
 
-    Book::factory()->create(['title' => 'Belajar PHP Modern']);
-    Book::factory()->create(['title' => 'Novel Sastra Indonesia']);
+    Book::factory()->create(['title' => 'Belajar PHP Modern', 'category_id' => $pemrograman->id]);
+    Book::factory()->create(['title' => 'Novel Sastra Indonesia', 'category_id' => $sastra->id]);
 
     $this->actingAs($petugas)
-        ->get(route('katalog.index', ['search' => 'PHP']))
+        ->get(route('books.index', ['search' => 'PHP']))
         ->assertOk()
         ->assertViewHas('books', fn ($books) => $books->total() === 1);
-});
-
-it('memerlukan minimal tiga huruf untuk live search', function () {
-    $petugas = User::factory()->petugas()->create();
-    Book::factory()->create(['title' => 'Belajar PHP Modern']);
 
     $this->actingAs($petugas)
-        ->get(route('katalog.search', ['search' => 'PH']))
+        ->get(route('books.index', ['category' => $sastra->id]))
         ->assertOk()
-        ->assertExactJson([]);
-
-    $this->actingAs($petugas)
-        ->get(route('katalog.search', ['search' => 'PHP']))
-        ->assertOk()
-        ->assertJsonCount(1);
+        ->assertViewHas('books', fn ($books) => $books->total() === 1);
 });

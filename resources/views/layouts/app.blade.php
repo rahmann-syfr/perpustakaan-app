@@ -44,23 +44,12 @@
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2 ms-auto">
-                    <a href="{{ route('katalog.index') }}" class="btn btn-sm btn-light-primary d-none d-md-inline-flex align-items-center" title="Katalog buku">
-                        <i class="bi bi-search me-1"></i> Katalog
-                    </a>
-                    <a href="{{ route('profile.show') }}" class="btn btn-sm btn-light-secondary d-none d-md-inline-flex align-items-center" title="Kartu anggota">
-                        <i class="bi bi-person-vcard me-1"></i> Profil
+                    <a href="{{ route('profile.show') }}" class="btn btn-sm btn-light-secondary d-none d-md-inline-flex align-items-center" title="Profil Saya">
+                        <i class="bi bi-person-circle me-1"></i> Profil
                     </a>
                     <button type="button" class="btn btn-sm perpus-theme-toggle" id="themeToggle" aria-label="Ganti tema tampilan">
                         <i class="bi bi-moon-stars-fill" id="themeToggleIcon"></i>
                     </button>
-                    <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-light-secondary position-relative" title="Notifikasi">
-                        <i class="bi bi-bell-fill"></i>
-                        @if(auth()->user()->unreadNotifications->isNotEmpty())
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger perpus-notification-dot">
-                                {{ auth()->user()->unreadNotifications->count() }}
-                            </span>
-                        @endif
-                    </a>
                 </div>
             </div>
 

@@ -18,13 +18,12 @@ class UpdateProfileRequest extends FormRequest
      */
     public function rules(): array
     {
+        $userId = $this->user()?->id;
+
         return [
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'institution' => ['nullable', 'string', 'max:120'],
-            'birth_date' => ['nullable', 'date', 'before:today'],
-            'gender' => ['nullable', Rule::in(['male', 'female'])],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ];
     }
 
@@ -35,9 +34,11 @@ class UpdateProfileRequest extends FormRequest
     {
         return [
             'name.required' => 'Nama wajib diisi.',
-            'birth_date.date' => 'Tanggal lahir tidak valid.',
-            'birth_date.before' => 'Tanggal lahir tidak boleh di masa depan.',
-            'gender.in' => 'Jenis kelamin tidak valid.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah digunakan oleh akun lain.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ];
     }
 
@@ -48,11 +49,8 @@ class UpdateProfileRequest extends FormRequest
     {
         return [
             'name' => 'nama',
-            'phone' => 'nomor telepon',
-            'address' => 'alamat',
-            'institution' => 'instansi',
-            'birth_date' => 'tanggal lahir',
-            'gender' => 'jenis kelamin',
+            'email' => 'email',
+            'password' => 'password',
         ];
     }
 }
