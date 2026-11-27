@@ -142,7 +142,7 @@
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
                             <input type="text" id="tableSearch" class="form-control border-start-0"
-                                   placeholder="Cari nama peminjam atau judul buku..." autocomplete="off">
+                                   placeholder="Cari nama peminjam, judul buku, atau petugas..." autocomplete="off">
                         </div>
                     </div>
                     <div class="col-12 col-md-4 d-flex align-items-center justify-content-md-end">
@@ -157,125 +157,227 @@
                                 <th style="width: 55px;">No</th>
                                 <th>Peminjam</th>
                                 <th>Judul Buku</th>
+                                <th>Dicatat Oleh</th>
                                 <th>Tgl Pinjam</th>
                                 <th>Batas Kembali</th>
                                 <th class="text-center">Status</th>
                                 <th class="text-center" style="width: 150px;">Aksi</th>
                             </tr>
                         </thead>
-                            <tbody>
-                                @foreach ($borrowings as $index => $row)
-                                    @php
-                                        $dueDate = $row->due_date?->copy()->startOfDay() ?? now()->startOfDay();
-                                        $isLate = $row->isOverdue();
-                                    @endphp
-                                    <tr>
-                                        <td class="text-muted">{{ $index + 1 }}</td>
-                                        <td>
-                                            <div class="fw-bold text-dark">{{ $row->user->name ?? 'User Terhapus' }}</div>
-                                            @if($row->user)
-                                                <small class="text-muted">{{ $row->user->email }}</small>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <div class="fw-semibold text-dark">{{ $row->book->title ?? 'Buku Terhapus' }}</div>
-                                            @if($row->fine_amount > 0)
-                                                <small class="text-danger fw-bold">
-                                                    Denda: Rp{{ number_format($row->fine_amount, 0, ',', '.') }}
-                                                </small>
-                                            @endif
-                                        </td>
-                                        <td>{{ \Carbon\Carbon::parse($row->borrow_date)->format('d M Y') }}</td>
-                                        <td>
-                                            <span class="{{ $isLate ? 'text-danger fw-bold' : '' }}">
-                                                {{ $dueDate->format('d M Y') }}
+                        <tbody>
+                            @foreach ($borrowings as $index => $row)
+                                @php
+                                    $dueDate = $row->due_date?->copy()->startOfDay() ?? now()->startOfDay();
+                                    $isLate = $row->isOverdue();
+                                @endphp
+                                <tr>
+                                    <td class="text-muted">{{ $index + 1 }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ $row->user->name ?? 'User Terhapus' }}</div>
+                                        @if($row->user)
+                                            <small class="text-muted">{{ $row->user->email }}</small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">{{ $row->book->title ?? 'Buku Terhapus' }}</div>
+                                        @if($row->fine_amount > 0)
+                                            <small class="text-danger fw-bold">
+                                                Denda: Rp{{ number_format($row->fine_amount, 0, ',', '.') }}
+                                            </small>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($row->admin)
+                                            <div class="fw-semibold text-dark">{{ $row->admin->name }}</div>
+                                            <span class="badge bg-light-info text-info" style="font-size: 0.7rem;">
+                                                {{ ucfirst($row->admin->role->value ?? $row->admin->role) }}
                                             </span>
-                                            @if($isLate)
-                                                <div class="text-danger small">Lewat tenggat</div>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            @if($row->status === \App\Enums\BorrowingStatus::Borrowed)
-                                                <span class="badge bg-light-warning text-warning fw-semibold">
-                                                    <i class="bi bi-hourglass-split me-1"></i>Dipinjam
-                                                </span>
-                                            @elseif($row->status === \App\Enums\BorrowingStatus::Returned)
-                                                <span class="badge bg-light-success text-success fw-semibold">
-                                                    <i class="bi bi-check-circle-fill me-1"></i>Dikembalikan
-                                                </span>
-                                            @elseif($row->status === \App\Enums\BorrowingStatus::Overdue)
-                                                <span class="badge bg-light-danger text-danger fw-semibold">
-                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Terlambat
-                                                </span>
-                                            @elseif($row->status === \App\Enums\BorrowingStatus::Lost)
-                                                <span class="badge bg-light-dark text-dark fw-semibold">
-                                                    <i class="bi bi-x-octagon-fill me-1"></i>Hilang
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            @if($row->status->isActive())
-                                                <div class="d-flex flex-column flex-sm-row gap-1 justify-content-center">
-                                                    @if(! $row->isOverdue())
-                                                        <form action="{{ route('borrowings.extend', $row) }}" method="POST" class="no-spinner d-inline">
-                                                            @csrf
-                                                            <button type="submit" class="btn btn-sm btn-light-warning fw-semibold">
-                                                                <i class="bi bi-calendar-plus me-1"></i>Perpanjang
-                                                            </button>
-                                                        </form>
-                                                    @endif
-                                                    @if($row->hasOutstandingFine())
-                                                        <a href="{{ route('fines.create', $row) }}" class="btn btn-sm btn-light-danger fw-semibold">
-                                                            <i class="bi bi-cash-coin me-1"></i>Bayar Denda
-                                                        </a>
-                                                    @endif
-                                                    <form action="{{ route('borrowings.return', $row) }}" method="POST" class="form-return no-spinner d-inline">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-primary fw-semibold">
-                                                            <i class="bi bi-box-arrow-in-down-left me-1"></i>Kembalikan
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            @else
-                                                <span class="text-success small fw-semibold">
-                                                    <i class="bi bi-check2-all me-1"></i>Selesai
-                                                </span>
-                                            @endif
-                                        </td>
-                                    </tr>
-                                @endforeach
+                                        @else
+                                            <span class="badge bg-light-secondary text-secondary" style="font-size: 0.75rem;">
+                                                -
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td>{{ \Carbon\Carbon::parse($row->borrow_date)->format('d M Y') }}</td>
+                                    <td>
+                                        <span class="{{ $isLate ? 'text-danger fw-bold' : '' }}">
+                                            {{ $dueDate->format('d M Y') }}
+                                        </span>
+                                        @if($isLate)
+                                            <div class="text-danger small">Lewat tenggat</div>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if($row->status === \App\Enums\BorrowingStatus::Borrowed)
+                                            <span class="badge bg-light-warning text-warning fw-semibold">
+                                                <i class="bi bi-hourglass-split me-1"></i>Dipinjam
+                                            </span>
+                                        @elseif($row->status === \App\Enums\BorrowingStatus::Returned)
+                                            <span class="badge bg-light-success text-success fw-semibold">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Dikembalikan
+                                            </span>
+                                        @elseif($row->status === \App\Enums\BorrowingStatus::Overdue)
+                                            <span class="badge bg-light-danger text-danger fw-semibold">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Terlambat
+                                            </span>
+                                        @elseif($row->status === \App\Enums\BorrowingStatus::Lost)
+                                            <span class="badge bg-light-dark text-dark fw-semibold">
+                                                <i class="bi bi-x-octagon-fill me-1"></i>Hilang
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if($row->status->isActive())
+                                            <div class="d-flex flex-column flex-sm-row gap-1 justify-content-center">
+                                                @if(! $row->isOverdue())
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-light-warning fw-semibold"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#extendModal{{ $row->id }}">
+                                                        <i class="bi bi-calendar-plus me-1"></i>Perpanjang
+                                                    </button>
+                                                @endif
+                                                @if($row->hasOutstandingFine())
+                                                    <a href="{{ route('fines.create', $row) }}" class="btn btn-sm btn-light-danger fw-semibold">
+                                                        <i class="bi bi-cash-coin me-1"></i>Bayar Denda
+                                                    </a>
+                                                @endif
+                                                <button type="button"
+                                                        class="btn btn-sm btn-primary fw-semibold"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#returnModal{{ $row->id }}">
+                                                    <i class="bi bi-box-arrow-in-down-left me-1"></i>Kembalikan
+                                                </button>
+                                            </div>
+                                        @else
+                                            <span class="text-success small fw-semibold">
+                                                <i class="bi bi-check2-all me-1"></i>Selesai
+                                            </span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
 
-                                @if($borrowings->isEmpty())
-                                    @include('partials.empty-row', [
-                                        'colspan' => 7,
-                                        'icon' => 'bi-journal-x',
-                                        'title' => 'Tidak Ada Data Transaksi',
-                                        'text' => 'Belum ada transaksi peminjaman pada periode yang dipilih.',
-                                        'actionUrl' => route('borrowings.create'),
-                                        'actionLabel' => 'Catat Peminjaman Baru',
-                                        'actionIcon' => 'bi-plus-circle',
-                                    ])
-                                @endif
-                            </tbody>
-                        </table>
+                            @if($borrowings->isEmpty())
+                                @include('partials.empty-row', [
+                                    'colspan' => 8,
+                                    'icon' => 'bi-journal-x',
+                                    'title' => 'Tidak Ada Data Transaksi',
+                                    'text' => 'Belum ada transaksi peminjaman pada periode yang dipilih.',
+                                    'actionUrl' => route('borrowings.create'),
+                                    'actionLabel' => 'Catat Peminjaman Baru',
+                                    'actionIcon' => 'bi-plus-circle',
+                                ])
+                            @endif
+                        </tbody>
+                    </table>
 
-                        <div class="perpus-table-empty" id="tableEmpty" hidden>
-                            <i class="bi bi-search"></i>
-                            <p class="mb-0 fw-semibold">Transaksi tidak ditemukan</p>
-                            <small>Coba ubah kata kunci pencarian Anda.</small>
-                        </div>
+                    <div class="perpus-table-empty" id="tableEmpty" hidden>
+                        <i class="bi bi-search"></i>
+                        <p class="mb-0 fw-semibold">Transaksi tidak ditemukan</p>
+                        <small>Coba ubah kata kunci pencarian Anda.</small>
                     </div>
-                    <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                        {{ $borrowings->links() }}
-                        <span class="perpus-table-counter small">
-                            Menampilkan {{ $borrowings->firstItem() ?? 0 }}-{{ $borrowings->lastItem() ?? 0 }} dari {{ $borrowings->total() }} transaksi
-                        </span>
-                    </div>
+                </div>
+                <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                    {{ $borrowings->links() }}
+                    <span class="perpus-table-counter small">
+                        Menampilkan {{ $borrowings->firstItem() ?? 0 }}-{{ $borrowings->lastItem() ?? 0 }} dari {{ $borrowings->total() }} transaksi
+                    </span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 @endsection
+
+@push('modals')
+@foreach ($borrowings as $row)
+    @if($row->status->isActive())
+        <!-- Modal Pengembalian Buku -->
+        <div class="modal fade" id="returnModal{{ $row->id }}" tabindex="-1" aria-labelledby="returnModalLabel{{ $row->id }}" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header perpus-modal-header">
+                        <h5 class="modal-title text-white fw-bold" id="returnModalLabel{{ $row->id }}">
+                            <i class="bi bi-box-arrow-in-down-left me-2"></i>Proses Pengembalian Buku
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ route('borrowings.return', $row) }}" method="POST">
+                        @csrf
+                        <div class="modal-body p-4">
+                            <p class="mb-3 small text-muted">
+                                Peminjam: <strong class="text-dark">{{ $row->user->name ?? '-' }}</strong><br>
+                                Buku: <strong class="text-dark">{{ $row->book->title ?? '-' }}</strong><br>
+                                Batas Kembali: <strong class="{{ $row->isOverdue() ? 'text-danger' : 'text-dark' }}">{{ $row->due_date?->format('d M Y') }}</strong>
+                            </p>
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Status Pengembalian <span class="text-danger">*</span></label>
+                                <select name="status"
+                                        class="form-select"
+                                        required
+                                        onchange="document.getElementById('lostFineBox{{ $row->id }}').hidden = (this.value !== '{{ \App\Enums\BorrowingStatus::Lost->value }}')">
+                                    <option value="{{ \App\Enums\BorrowingStatus::Returned->value }}" selected>Dikembalikan (Normal)</option>
+                                    <option value="{{ \App\Enums\BorrowingStatus::Lost->value }}">Buku Hilang</option>
+                                </select>
+                                <small class="text-muted">Denda keterlambatan akan dihitung otomatis oleh sistem jika melewati batas kembali.</small>
+                            </div>
+                            <div class="mb-2" id="lostFineBox{{ $row->id }}" hidden>
+                                <label class="form-label fw-semibold">Denda Penggantian Buku Hilang (Rp)</label>
+                                <input type="number" name="lost_fine_amount" class="form-control" min="0" placeholder="Contoh: 50000">
+                                <small class="text-muted">Kosongkan untuk menggunakan nominal denda buku hilang default sistem.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary btn-sm fw-semibold">
+                                <i class="bi bi-check-circle me-1"></i> Simpan Pengembalian
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Perpanjangan Peminjaman -->
+        @if(! $row->isOverdue())
+            <div class="modal fade" id="extendModal{{ $row->id }}" tabindex="-1" aria-labelledby="extendModalLabel{{ $row->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header perpus-modal-header-warning">
+                            <h5 class="modal-title fw-bold" id="extendModalLabel{{ $row->id }}">
+                                <i class="bi bi-calendar-plus me-2"></i>Perpanjang Masa Peminjaman
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form action="{{ route('borrowings.extend', $row) }}" method="POST">
+                            @csrf
+                            <div class="modal-body p-4">
+                                <p class="mb-2 small text-muted">
+                                    Peminjam: <strong class="text-dark">{{ $row->user->name ?? '-' }}</strong><br>
+                                    Buku: <strong class="text-dark">{{ $row->book->title ?? '-' }}</strong><br>
+                                    Batas Kembali Saat Ini: <strong class="text-danger">{{ $row->due_date?->format('d M Y') }}</strong>
+                                </p>
+                                <div class="mt-3">
+                                    <label class="form-label fw-semibold">Tambah Durasi (Hari) <span class="text-danger">*</span></label>
+                                    <input type="number" name="days" class="form-control" min="1" max="30" value="7" required>
+                                    <small class="text-muted">Masukkan jumlah hari tambahan dari batas kembali saat ini (minimal 1 hari).</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-warning btn-sm fw-semibold">
+                                    <i class="bi bi-check-circle me-1"></i> Simpan Perpanjangan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+@endforeach
+@endpush
 
 @push('scripts')
 <script>
@@ -285,32 +387,7 @@
             table: '#table1',
             empty: '#tableEmpty',
             counter: '#tableCounter',
-            columns: [1, 2],
-        });
-
-        // Konfirmasi proses pengembalian buku.
-        document.addEventListener('submit', function (event) {
-            const form = event.target;
-
-            if (!(form instanceof HTMLFormElement)) return;
-            if (!form.classList.contains('form-return')) return;
-            if (form.dataset.confirmed === '1') return;
-
-            event.preventDefault();
-
-            Perpus.confirm({
-                title: 'Proses Pengembalian Buku?',
-                text: 'Sistem akan menghitung denda otomatis jika melewati batas tanggal kembali.',
-                confirmText: 'Ya, Kembalikan',
-                cancelText: 'Batal',
-                variant: 'primary',
-                icon: 'bi-arrow-return-left',
-            }).then(function (confirmed) {
-                if (!confirmed) return;
-
-                form.dataset.confirmed = '1';
-                form.submit();
-            });
+            columns: [1, 2, 3],
         });
     });
 </script>
