@@ -3,8 +3,6 @@
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
-use App\Models\Reservation;
-use App\Models\Review;
 use App\Models\User;
 
 /**
@@ -116,47 +114,11 @@ it('menyimpan anggota baru dengan data valid', function () {
     $this->assertDatabaseHas('users', ['email' => 'anggota.uji@perpus.test']);
 });
 
-it('menyimpan kategori baru dan menolDuplikat nama', function () {
-    $petugas = User::factory()->petugas()->create();
+it('menyimpan kategori baru dan menolak duplikat nama', function () {
+    $admin = User::factory()->admin()->create();
     $category = Category::factory()->create();
 
-    $this->actingAs($petugas)
+    $this->actingAs($admin)
         ->post(route('categories.store'), ['name' => $category->name])
         ->assertSessionHasErrors('name');
-});
-
-it('menyimpan ulasan buku dan menolak rating di luar rentang', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create();
-
-    $this->actingAs($anggota)
-        ->post(route('reviews.store', $book), ['rating' => 9, 'review' => 'Ulasan otomatis.'])
-        ->assertSessionHasErrors('rating');
-
-    $this->actingAs($anggota)
-        ->post(route('reviews.store', $book), ['rating' => 4, 'review' => 'Ulasan otomatis.'])
-        ->assertRedirect();
-
-    $this->assertDatabaseHas('reviews', ['book_id' => $book->id, 'rating' => 4]);
-});
-
-it('menghapus ulasan milik anggota sendiri', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create();
-    $review = Review::factory()->create(['user_id' => $anggota->id, 'book_id' => $book->id]);
-
-    $this->actingAs($anggota)->delete(route('reviews.destroy', $review))->assertRedirect();
-
-    $this->assertDatabaseMissing('reviews', ['id' => $review->id]);
-});
-
-it('menandai notifikasi sebagai dibaca', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create();
-
-    Reservation::factory()->create(['user_id' => $anggota->id, 'book_id' => $book->id]);
-
-    $this->actingAs($anggota)->post(route('notifications.read-all'))->assertRedirect();
-
-    $this->actingAs($anggota)->post(route('notifications.read', 1))->assertRedirect();
 });

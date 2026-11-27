@@ -55,16 +55,6 @@ class User extends Authenticatable
         return $this->hasMany(Borrowing::class, 'user_id');
     }
 
-    public function reviews(): HasMany
-    {
-        return $this->hasMany(Review::class);
-    }
-
-    public function reservations(): HasMany
-    {
-        return $this->hasMany(Reservation::class);
-    }
-
     public function finePayments(): HasMany
     {
         return $this->hasMany(FinePayment::class);
@@ -81,13 +71,5 @@ class User extends Authenticatable
     public function isStaff(): bool
     {
         return $this->role->isStaff();
-    }
-
-    /**
-     * Nomor kartu anggota yang ditampilkan pada kartu digital.
-     */
-    public function memberCode(): string
-    {
-        return sprintf('PA-%06d', $this->id);
     }
 }

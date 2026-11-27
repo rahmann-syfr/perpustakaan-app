@@ -5,8 +5,6 @@ use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
 use App\Models\FinePayment;
-use App\Models\Reservation;
-use App\Models\Review;
 use App\Models\User;
 
 /**
@@ -14,14 +12,8 @@ use App\Models\User;
  * dengan kondisi data berbeda (kosong, terisi, ekstrem).
  */
 it('merender seluruh halaman utama untuk semua role tanpa error', function () {
-    $halamanAnggota = [
-        'dashboard', 'katalog.index', 'riwayat.index', 'profile.show',
-        'notifications.index', 'reservations.index',
-    ];
-
     $halamanStaff = [
-        'dashboard', 'katalog.index', 'riwayat.index', 'profile.show',
-        'notifications.index', 'reservations.index', 'fines.index',
+        'dashboard', 'profile.show', 'fines.index',
         'borrowings.index', 'books.index', 'categories.index', 'members.index',
         'analytics.index', 'borrowings.create', 'books.create', 'members.create',
     ];
@@ -29,13 +21,8 @@ it('merender seluruh halaman utama untuk semua role tanpa error', function () {
     // Manajemen pengguna dan pengaturan sistem hanya untuk admin/superadmin.
     $halamanAdmin = ['users.index', 'users.create', 'settings.index'];
 
-    $anggota = User::factory()->anggota()->create();
     $petugas = User::factory()->petugas()->create();
     $admin = User::factory()->admin()->create();
-
-    foreach ($halamanAnggota as $routeName) {
-        $this->actingAs($anggota)->get(route($routeName))->assertOk();
-    }
 
     foreach ($halamanStaff as $routeName) {
         $this->actingAs($petugas)->get(route($routeName))->assertOk();
@@ -60,10 +47,8 @@ it('merender halaman staf dengan data lengkap', function () {
     ]);
 
     FinePayment::factory()->create(['borrowing_id' => $borrowing->id, 'user_id' => $anggota->id]);
-    Reservation::factory()->create(['user_id' => $anggota->id, 'book_id' => $book->id]);
-    Review::factory()->create(['user_id' => $anggota->id, 'book_id' => $book->id]);
 
-    foreach (['dashboard', 'fines.index', 'borrowings.index', 'reservations.index',
+    foreach (['dashboard', 'fines.index', 'borrowings.index',
         'members.index', 'books.index', 'categories.index', 'analytics.index'] as $routeName) {
         $this->actingAs($petugas)->get(route($routeName))->assertOk();
     }
@@ -86,44 +71,15 @@ it('merender halaman detail anggota dan buku', function () {
     $this->actingAs($petugas)->get(route('books.edit', $book->id))->assertOk();
 });
 
-it('merender halaman profil saat data biodata terisi lengkap', function () {
-    $anggota = User::factory()->anggota()->create([
-        'phone' => '08123456789',
-        'address' => 'Jl. Merdeka No. 10',
-        'institution' => 'Universitas Nusantara',
-        'birth_date' => '2000-05-12',
-        'gender' => 'male',
+it('merender halaman profil pengguna', function () {
+    $petugas = User::factory()->petugas()->create([
+        'name' => 'Petugas Perpus',
+        'email' => 'petugas.profil@perpus.test',
     ]);
 
-    $this->actingAs($anggota)->get(route('profile.show'))->assertOk()
-        ->assertSee('08123456789')
-        ->assertSee('Universitas Nusantara')
-        ->assertSee('Laki-laki');
-});
-
-it('merender halaman profil saat biodata kosong', function () {
-    $anggota = User::factory()->anggota()->create([
-        'phone' => null,
-        'institution' => null,
-        'birth_date' => null,
-        'gender' => null,
-    ]);
-
-    $this->actingAs($anggota)->get(route('profile.show'))->assertOk();
-});
-
-it('merender halaman reservasi saat tabel kosong dan terisi', function () {
-    $petugas = User::factory()->petugas()->create();
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create(['available_stock' => 0]);
-
-    $this->actingAs($petugas)->get(route('reservations.index'))->assertOk()
-        ->assertSee('Belum Ada Reservasi');
-
-    Reservation::factory()->create(['user_id' => $anggota->id, 'book_id' => $book->id]);
-
-    $this->actingAs($petugas)->get(route('reservations.index'))->assertOk()
-        ->assertSee($book->title);
+    $this->actingAs($petugas)->get(route('profile.show'))->assertOk()
+        ->assertSee('Petugas Perpus')
+        ->assertSee('petugas.profil@perpus.test');
 });
 
 it('merender halaman denda saat tabel kosong dan terisi', function () {
@@ -188,9 +144,4 @@ it('mengekspor laporan CSV sirkulasi tanpa error', function () {
 
     $response->assertOk();
     $response->assertHeader('content-type', 'text/csv; charset=UTF-8');
-});
-
-it('menjalankan seluruh perintah terjadwal tanpa error', function () {
-    $this->artisan('app:send-due-reminders')->assertSuccessful();
-    $this->artisan('app:process-reservations')->assertSuccessful();
 });

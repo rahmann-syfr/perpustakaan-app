@@ -30,42 +30,31 @@ it('merender dashboard untuk petugas tanpa kartu statistik anggota', function ()
         ->assertDontSee('Budi Santoso', false);
 });
 
-it('merender halaman katalog beserta hasil pencarian', function () {
+it('merender halaman data buku beserta hasil pencarian', function () {
     $petugas = User::factory()->petugas()->create();
     Book::factory()->create(['title' => 'Belajar Alpine.js']);
 
     $this->actingAs($petugas)
-        ->get(route('katalog.index', ['search' => 'Alpine']))
+        ->get(route('books.index', ['search' => 'Alpine']))
         ->assertOk()
         ->assertSee('Belajar Alpine.js');
 });
 
-it('merender riwayat peminjaman anggota', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create(['title' => 'Buku Riwayat']);
-    Borrowing::factory()->create(['user_id' => $anggota->id, 'book_id' => $book->id]);
-
-    $this->actingAs($anggota)
-        ->get(route('riwayat.index'))
-        ->assertOk()
-        ->assertSee('Buku Riwayat');
-});
-
 it('merender form edit kategori', function () {
-    $petugas = User::factory()->petugas()->create();
+    $admin = User::factory()->admin()->create();
     $category = Category::factory()->create(['name' => 'Kategori Edit']);
 
-    $this->actingAs($petugas)
+    $this->actingAs($admin)
         ->get(route('categories.edit', $category))
         ->assertOk()
         ->assertSee('Kategori Edit');
 });
 
 it('menolak nama kategori yang duplikat', function () {
-    $petugas = User::factory()->petugas()->create();
+    $admin = User::factory()->admin()->create();
     Category::factory()->create(['name' => 'Sastra']);
 
-    $this->actingAs($petugas)
+    $this->actingAs($admin)
         ->post(route('categories.store'), ['name' => 'Sastra'])
         ->assertSessionHasErrors('name');
 });

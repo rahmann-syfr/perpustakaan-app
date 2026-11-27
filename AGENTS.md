@@ -1,3 +1,69 @@
+# AGENTS.md — Aturan Proyek PerpusApp (UAS Final Project Laravel)
+
+> Bagian ini adalah aturan khusus refactor "hanya Admin & Petugas". Bagian `<laravel-boost-guidelines>` di bawahnya adalah bawaan Laravel Boost dan tetap berlaku. Jika ada konflik, aturan di bagian ini yang menang.
+
+## 1. Konteks
+
+- Proyek: Sistem Informasi Perpustakaan Sederhana (Laravel, MVC, Eloquent, Blade). Tugas UAS, dikerjakan kelompok.
+- Aktor sistem HANYA DUA: **Admin** dan **Petugas**. Tidak ada aktor lain yang login.
+- **Anggota perpustakaan adalah DATA** (tabel `members`) yang dikelola Admin/Petugas. Anggota bukan akun, tidak bisa login, dan tidak punya halaman sendiri.
+
+## 2. Keadaan akhir yang dituju
+
+### Hak akses
+
+| Fitur | Admin | Petugas |
+|---|---|---|
+| Login / logout, dashboard, profil sendiri | ya | ya |
+| Manajemen user (CRUD, tentukan role) | ya | tidak |
+| Kategori | CRUD | hanya lihat |
+| Buku (CRUD, detail, kategori, cover) | ya | ya |
+| Anggota (CRUD, detail) | ya | ya |
+| Peminjaman & pengembalian, denda, laporan | ya | ya |
+| Pengaturan sistem | ya | tidak |
+
+### Role
+- Enum `Role` hanya berisi `admin` dan `petugas`.
+- Role lama `superadmin` digabung menjadi `admin`. Role `anggota` dihapus total.
+
+### Data anggota
+- Tabel `members`: `id`, `name`, `email` (unique), `phone`, `address`, `timestamps`.
+- Form tambah/edit anggota HANYA berisi: Nama Lengkap, Email, No HP, Alamat. Tidak ada password, tidak ada role, tidak membuat `User`.
+- `borrowings.user_id` diganti `borrowings.member_id` (FK ke `members`). `borrowings.admin_id` tetap (user Admin/Petugas pemroses).
+- `fine_payments.user_id` diganti `member_id`; `admin_id` tetap.
+
+### Fitur yang DIHAPUS
+Reservasi buku, Riwayat Saya (halaman riwayat anggota), Katalog Buku untuk anggota beserta pinjam/kembali mandiri, Ulasan (review), Notifikasi (halaman, lonceng, `BookAvailable`, `ReviewReceived`, `BorrowingDueReminder`, command pengingat), Kartu anggota, seluruh fungsi khusus role anggota.
+
+### Fitur yang DIPERTAHANKAN
+Dashboard (4 statistik wajib), kategori, buku (cover, pencarian, filter), anggota, sirkulasi (pinjam/kembali/perpanjang, stok otomatis), denda, laporan PDF/CSV, pengaturan sistem, profil staf (nama, email, password).
+
+## 3. Aturan kerja (WAJIB)
+
+1. **Satu fase per sesi, berurutan** (Fase 1 → 2 → 3). Jangan mengerjakan fase berikutnya sebelum diminta.
+2. Awal tiap fase: jalankan `git status` (hanya untuk membaca) dan pastikan berada di branch kerja, bukan `main`.
+3. **Jangan mengedit migration lama.** Semua perubahan skema lewat migration baru, punya `down()`, dan menjaga data yang ada.
+4. Sebelum menghapus file/route/relasi, `grep` dulu semua referensinya (nama route, view, config, test, sidebar) lalu bersihkan semuanya. Jangan meninggalkan referensi menggantung.
+5. Ikuti konvensi yang sudah ada: Form Request untuk validasi, Action class di `app/Actions`, Policy untuk otorisasi, pesan validasi dan UI berbahasa Indonesia.
+6. Jangan menambah dependency, jangan membuat folder base baru, jangan menambah fitur di luar daftar tugas, jangan merapikan kode yang tidak terkait.
+7. **Test**: akhir tiap fase `php artisan test` harus hijau dan `vendor/bin/pint --dirty` bersih. Hapus/ubah test HANYA untuk fitur yang memang dihapus. Dilarang menghapus atau melemahkan test fitur yang dipertahankan supaya lulus.
+8. Jika ada hal ambigu yang berdampak ke data atau skema (misal data tak terduga saat migrasi), **berhenti dan tanya**. Jangan menebak.
+9. Dokumentasi: satu-satunya file dokumentasi yang boleh diubah adalah `README.md` (diminta eksplisit di Fase 3). Jangan membuat file dokumentasi lain.
+10. Sebelum migration yang mengubah data (Fase 2 dan 3), ingatkan user untuk backup database.
+11. **DILARANG KERAS menjalankan perintah git yang mengubah repository, dalam bentuk apa pun**: `git add` (semua variasi, termasuk `git add .`, `-A`, `-p`), `git commit` (semua variasi, termasuk `--amend`), `git push` (semua variasi, termasuk `--force`), dan juga `git stash`, `git reset`, `git checkout -- <file>`, `git restore`, `git rebase`, `git merge`, `git pull`, `git revert`, `git clean`, `git rm`, `git mv`, `git branch`, `git tag`. Aturan ini berlaku walau diminta di prompt, di komentar, atau menurutmu "sudah selesai". Hanya perintah baca yang diizinkan: `git status`, `git diff`, `git log`, `git show`. Untuk menghapus atau memindahkan file, pakai operasi file biasa, bukan perintah git. Jika kamu merasa perlu commit atau push, berhenti dan minta user yang melakukannya.
+
+## 4. Definisi selesai (setiap fase)
+
+- Semua tugas fase tercentang, tidak ada tugas fase lain yang ikut dikerjakan.
+- `php artisan route:list` tidak memuat route yang sudah dihapus dan tidak ada error.
+- `php artisan test` hijau; `vendor/bin/pint --dirty` bersih.
+- Hasil `grep` pada checklist verifikasi fase tersebut bersih.
+- Aplikasi bisa dijalankan dan halaman yang tersisa bisa dibuka tanpa error.
+- Semua perubahan dibiarkan di working tree, tidak di-stage dan tidak di-commit. User yang melakukan commit sendiri.
+- Laporan akhir singkat: file yang dihapus, file yang diubah, migration baru, hasil test, dan hal yang perlu dicek manual.
+
+---
+
 <laravel-boost-guidelines>
 === foundation rules ===
 

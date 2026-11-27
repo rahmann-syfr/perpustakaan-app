@@ -3,9 +3,7 @@
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
-use App\Models\Review;
 use App\Models\User;
-use App\Notifications\ReviewReceived;
 
 /**
  * Smoke test: merender SETIAP halaman GET untuk SETIAP role.
@@ -32,14 +30,6 @@ function seedPerpusData(): array
         'admin_id' => null,
     ]);
 
-    // Ulasan dari anggota lain agar halaman ulasan tidak kosong.
-    Review::factory()->create([
-        'user_id' => $anggota->id,
-        'book_id' => $book->id,
-        'rating' => 4,
-        'comment' => 'Buku yang sangat membantu.',
-    ]);
-
     return [
         'category' => $category,
         'book' => $book,
@@ -60,12 +50,8 @@ function daftarHalamanGet(): array
 {
     return [
         'dashboard' => ['dashboard', []],
-        'katalog' => ['katalog.index', []],
-        'riwayat' => ['riwayat.index', []],
         'profil' => ['profile.show', []],
-        'notifikasi' => ['notifications.index', []],
         'buku show' => ['books.show', ['book']],
-        'ulasan buku' => ['reviews.index', ['book']],
         'laporan' => ['analytics.index', []],
         'laporan 6 bulan' => ['analytics.index', []],
         'laporan 12 bulan' => ['analytics.index', []],
@@ -83,7 +69,6 @@ function daftarHalamanGet(): array
         'kategori edit' => ['categories.edit', ['category']],
         'sirkulasi' => ['borrowings.index', []],
         'sirkulasi form' => ['borrowings.create', []],
-        'reservasi' => ['reservations.index', []],
         'denda' => ['fines.index', []],
         'pengguna' => ['users.index', []],
         'pengguna form' => ['users.create', []],
@@ -196,25 +181,6 @@ it('merender analitik dengan rentang bulan yang tidak valid tanpa error', functi
         ->assertOk();
 });
 
-it('merender katalog tanpa kategori yang cocok', function () {
-    $anggota = User::factory()->anggota()->create();
-    Book::factory()->create(['title' => 'Buku Tersembunyi']);
-
-    $this->actingAs($anggota)
-        ->get(route('katalog.index', ['search' => 'TidakAdaYangSama']))
-        ->assertOk()
-        ->assertDontSee('Buku Tersembunyi');
-});
-
-it('merender notifikasi kosong tanpa error', function () {
-    $anggota = User::factory()->anggota()->create();
-
-    $this->actingAs($anggota)
-        ->get(route('notifications.index'))
-        ->assertOk()
-        ->assertSee('Belum ada notifikasi untuk Anda.');
-});
-
 it('merender pengaturan dengan nilai default saat belum pernah disimpan', function () {
     $admin = User::factory()->admin()->create();
 
@@ -224,46 +190,12 @@ it('merender pengaturan dengan nilai default saat belum pernah disimpan', functi
         ->assertSee('Maksimal Durasi Pinjam');
 });
 
-it('merender buku yang belum memiliki ulasan tanpa error', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create();
+it('merender profil pengguna tanpa error', function () {
+    $petugas = User::factory()->petugas()->create();
 
-    $this->actingAs($anggota)
-        ->get(route('books.show', $book))
-        ->assertOk()
-        ->assertSee('Belum ada ulasan untuk buku ini.');
-});
-
-it('merender profil anggota tanpa error', function () {
-    $anggota = User::factory()->anggota()->create();
-
-    $this->actingAs($anggota)
+    $this->actingAs($petugas)
         ->get(route('profile.show'))
         ->assertOk();
-});
-
-it('menampilkan form ulasan dengan urutan radio rating dari lima ke satu', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create();
-
-    $response = $this->actingAs($anggota)->get(route('books.show', $book));
-
-    $response->assertOk();
-
-    $html = $response->getContent();
-
-    // Radio harus urut 5 -> 1 agar general sibling selector CSS benar.
-    $positions = [];
-    foreach ([5, 4, 3, 2, 1] as $rating) {
-        $positions[] = strpos($html, 'id="rating'.$rating.'"');
-    }
-
-    expect($positions)->not->toContain(false);
-
-    $sorted = $positions;
-    sort($sorted);
-
-    expect($sorted)->toBe($positions, 'Radio rating harus dirender berurutan dari 5 ke 1.');
 });
 
 it('menyediakan kolom pencarian dan empty state pada halaman data', function (string $role, string $route) {
@@ -283,58 +215,6 @@ it('menyediakan kolom pencarian dan empty state pada halaman data', function (st
     'sirkulasi' => ['petugas', 'borrowings.index'],
 ]);
 
-it('menampilkan pratinjau rating dan penghitung karakter pada form ulasan', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create();
-
-    $this->actingAs($anggota)
-        ->get(route('books.show', $book))
-        ->assertOk()
-        ->assertSee('id="ratingPreview"', false)
-        ->assertSee('id="commentCounter"', false);
-});
-
-it('menolak menandai notifikasi milik pengguna lain sebagai dibaca', function () {
-    $pemilik = User::factory()->anggota()->create();
-    $orangLain = User::factory()->anggota()->create();
-
-    $pemilik->notifyNow(new ReviewReceived(
-        Review::factory()->create([
-            'user_id' => $pemilik->id,
-            'book_id' => Book::factory()->create()->id,
-        ])
-    ));
-
-    $notifikasi = $pemilik->notifications()->latest()->firstOrFail();
-
-    $this->actingAs($orangLain)
-        ->post(route('notifications.read', $notifikasi->id))
-        ->assertRedirect()
-        ->assertSessionHas('error');
-
-    expect($notifikasi->fresh()->read_at)->toBeNull();
-});
-
-it('menandai notifikasi milik sendiri sebagai dibaca', function () {
-    $anggota = User::factory()->anggota()->create();
-
-    $anggota->notifyNow(new ReviewReceived(
-        Review::factory()->create([
-            'user_id' => $anggota->id,
-            'book_id' => Book::factory()->create()->id,
-        ])
-    ));
-
-    $notifikasi = $anggota->notifications()->latest()->firstOrFail();
-
-    $this->actingAs($anggota)
-        ->post(route('notifications.read', $notifikasi->id))
-        ->assertRedirect()
-        ->assertSessionHas('success');
-
-    expect($notifikasi->fresh()->read_at)->not->toBeNull();
-});
-
 it('merender seluruh halaman untuk setiap role tanpa error', function (string $role, array $halaman) {
     $data = seedPerpusData();
     $pengguna = User::factory()->{$role}()->create();
@@ -349,21 +229,13 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
 })->with([
     'anggota' => ['anggota', [
         'dashboard' => ['dashboard', [], []],
-        'katalog' => ['katalog.index', [], []],
-        'riwayat' => ['riwayat.index', [], []],
         'profil' => ['profile.show', [], []],
-        'notifikasi' => ['notifications.index', [], []],
         'buku show' => ['books.show', ['book'], []],
-        'ulasan buku' => ['reviews.index', ['book'], []],
     ]],
     'petugas' => ['petugas', [
         'dashboard' => ['dashboard', [], []],
-        'katalog' => ['katalog.index', [], []],
-        'riwayat' => ['riwayat.index', [], []],
         'profil' => ['profile.show', [], []],
-        'notifikasi' => ['notifications.index', [], []],
         'buku show' => ['books.show', ['book'], []],
-        'ulasan buku' => ['reviews.index', ['book'], []],
         'laporan' => ['analytics.index', [], []],
         'laporan 6 bulan' => ['analytics.index', [], ['range' => 6]],
         'laporan 12 bulan' => ['analytics.index', [], ['range' => 12]],
@@ -377,7 +249,6 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
         'buku form' => ['books.create', [], []],
         'buku edit' => ['books.edit', ['book'], []],
         'kategori' => ['categories.index', [], []],
-        'kategori edit' => ['categories.edit', ['category'], []],
         'sirkulasi' => ['borrowings.index', [], []],
         'sirkulasi form' => ['borrowings.create', [], []],
     ]],
@@ -391,6 +262,7 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
         'pengguna edit' => ['users.edit', ['user'], []],
         'sirkulasi' => ['borrowings.index', [], []],
         'buku data' => ['books.index', [], []],
+        'kategori edit' => ['categories.edit', ['category'], []],
     ]],
     'superadmin' => ['superadmin', [
         'dashboard' => ['dashboard', [], []],

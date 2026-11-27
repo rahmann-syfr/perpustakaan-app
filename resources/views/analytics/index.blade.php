@@ -47,9 +47,9 @@
     <div class="col-6 col-xl-3">
         <div class="card card-stat h-100 mb-0">
             <div class="card-body">
-                <h6 class="text-muted small mb-1">Rating Rata-rata</h6>
-                <h4 class="font-extrabold mb-0 text-primary">{{ number_format($summary['average_rating'], 1, ',', '.') }} <small class="fs-6">/ 5</small></h4>
-                <small class="text-muted">{{ $summary['total_reviews'] }} ulasan dari {{ $summary['total_members'] }} anggota</small>
+                <h6 class="text-muted small mb-1">Total Koleksi</h6>
+                <h4 class="font-extrabold mb-0 text-primary">{{ $summary['total_books'] }} <small class="fs-6">Judul</small></h4>
+                <small class="text-muted">{{ $summary['total_members'] }} anggota terdaftar</small>
             </div>
         </div>
     </div>
@@ -109,7 +109,6 @@
                                 <th>#</th>
                                 <th>Judul Buku</th>
                                 <th class="text-center">Dipinjam</th>
-                                <th class="text-center">Rating</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -120,13 +119,10 @@
                                     <td class="text-center">
                                         <span class="badge bg-light-primary text-primary">{{ $book->borrowings_count }}</span>
                                     </td>
-                                    <td class="text-center text-warning">
-                                        {{ $book->reviews_avg_rating ? number_format($book->reviews_avg_rating, 1, ',', '.') : '-' }}
-                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">Belum ada data peminjaman.</td>
+                                    <td colspan="3" class="text-center text-muted py-4">Belum ada data peminjaman.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -138,7 +134,7 @@
 </div>
 
 <div class="row g-4">
-    <div class="col-xl-6">
+    <div class="col-12">
         <div class="card h-100 mb-0">
             <div class="card-header">
                 <h5 class="card-title mb-0"><i class="bi bi-people text-primary me-1"></i> Anggota Teraktif</h5>
@@ -173,33 +169,6 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-6">
-        <div class="card h-100 mb-0">
-            <div class="card-header">
-                <h5 class="card-title mb-0"><i class="bi bi-chat-heart text-primary me-1"></i> Ulasan Terbaru</h5>
-            </div>
-            <div class="card-body">
-                @forelse($recentReviews as $review)
-                    <div class="py-2 border-bottom">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <div>
-                                <span class="fw-semibold">{{ $review->user?->name ?? 'Anggota' }}</span>
-                                <span class="text-warning ms-2">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <i class="bi {{ $i <= $review->rating ? 'bi-star-fill' : 'bi-star' }}"></i>
-                                    @endfor
-                                </span>
-                                <div class="small text-muted">{{ $review->book?->title ?? 'Buku' }}</div>
-                            </div>
-                            <small class="text-muted">{{ $review->created_at->diffForHumans() }}</small>
-                        </div>
-                    </div>
-                @empty
-                    <p class="text-muted text-center py-4 mb-0">Belum ada ulasan masuk.</p>
-                @endforelse
             </div>
         </div>
     </div>

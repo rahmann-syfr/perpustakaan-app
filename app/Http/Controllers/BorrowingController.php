@@ -9,7 +9,6 @@ use App\Enums\BorrowingStatus;
 use App\Enums\Role;
 use App\Http\Requests\ExtendBorrowingRequest;
 use App\Http\Requests\ReturnBorrowingRequest;
-use App\Http\Requests\SelfBorrowBookRequest;
 use App\Http\Requests\StoreBorrowingRequest;
 use App\Models\Book;
 use App\Models\Borrowing;
@@ -178,79 +177,6 @@ class BorrowingController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
-    }
-
-    /**
-     * Halaman riwayat peminjaman milik pengguna yang sedang login.
-     */
-    public function history(Request $request): View
-    {
-        $borrowings = Borrowing::query()
-            ->where('user_id', $request->user()->id)
-            ->with(['book', 'finePayments'])
-            ->latest()
-            ->paginate(15);
-
-        return view('riwayat', compact('borrowings'));
-    }
-
-    /**
-     * Peminjaman mandiri oleh anggota dari halaman katalog.
-     */
-    public function pinjamMandiri(
-        SelfBorrowBookRequest $request,
-        Book $book,
-        BorrowBook $borrowBook
-    ): RedirectResponse {
-        $maxLoanDays = SystemSetting::getInt('maksimal_hari_pinjam', 7);
-        $durationDays = $request->integer('duration_days', $maxLoanDays);
-
-        try {
-            $borrowBook->handle([
-                'user_id' => $request->user()->id,
-                'book_id' => $book->id,
-                'duration_days' => $durationDays,
-            ]);
-        } catch (ValidationException $exception) {
-            return back()
-                ->withErrors($exception->errors())
-                ->withInput();
-        }
-
-        return redirect()
-            ->route('riwayat.index')
-            ->with('success', 'Buku "'.$book->title.'" berhasil dipinjam! Silakan cek riwayat peminjaman Anda.');
-    }
-
-    /**
-     * Pengembalian mandiri oleh anggota dari halaman riwayat.
-     */
-    public function kembalikanMandiri(
-        Request $request,
-        Borrowing $borrowing,
-        ReturnBook $returnBook
-    ): RedirectResponse {
-        if ($request->user()->role !== Role::Anggota) {
-            abort(403);
-        }
-
-        if ($borrowing->user_id !== $request->user()->id) {
-            abort(403);
-        }
-
-        try {
-            $updated = $returnBook->handle($borrowing, BorrowingStatus::Returned);
-        } catch (ValidationException $exception) {
-            return back()->withErrors($exception->errors());
-        }
-
-        $message = $updated->fine_amount > 0
-            ? 'Buku berhasil dikembalikan. Denda: Rp'.number_format($updated->fine_amount, 0, ',', '.')
-            : 'Buku berhasil dikembalikan tepat waktu!';
-
-        return redirect()
-            ->route('riwayat.index')
-            ->with('success', $message);
     }
 
     /**

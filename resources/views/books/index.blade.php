@@ -18,18 +18,36 @@
             </div>
 
             <div class="card-body">
-                <div class="row g-2 mb-3">
-                    <div class="col-12 col-md-8">
+                <form action="{{ route('books.index') }}" method="GET" class="row g-2 mb-3 align-items-center">
+                    <div class="col-12 col-md-5">
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" id="tableSearch" class="form-control border-start-0"
-                                   placeholder="Cari judul, penulis, ISBN, atau kategori..." autocomplete="off">
+                            <input type="text" id="tableSearch" name="search" class="form-control border-start-0"
+                                   value="{{ request('search') }}"
+                                   placeholder="Cari judul, penulis, atau ISBN..." autocomplete="off">
                         </div>
                     </div>
-                    <div class="col-12 col-md-4 d-flex align-items-center justify-content-md-end gap-2">
-                        <span class="perpus-table-counter" id="tableCounter"></span>
+                    <div class="col-12 col-md-4">
+                        <select class="form-select" name="category" onchange="this.form.submit()">
+                            <option value="">Semua Kategori</option>
+                            @foreach($categories as $cat)
+                                <option value="{{ $cat->id }}" {{ (string) request('category') === (string) $cat->id ? 'selected' : '' }}>
+                                    {{ $cat->name }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
-                </div>
+                    <div class="col-12 col-md-3 d-flex align-items-center gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-search me-1"></i> Cari
+                        </button>
+                        @if(request('search') || request('category'))
+                            <a href="{{ route('books.index') }}" class="btn btn-light-secondary" data-bs-toggle="tooltip" title="Reset Filter">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </a>
+                        @endif
+                    </div>
+                </form>
 
                 <div class="table-responsive">
                     <table class="table table-hover align-middle" id="table1">

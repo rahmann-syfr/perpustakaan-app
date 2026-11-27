@@ -61,13 +61,6 @@
                                     <a href="{{ route('books.index') }}" class="btn btn-outline-primary">
                                         <i class="bi bi-book-half me-1"></i> Data Buku
                                     </a>
-                                @else
-                                    <a href="{{ route('katalog.index') }}" class="btn btn-primary">
-                                        <i class="bi bi-search me-1"></i> Jelajahi Katalog
-                                    </a>
-                                    <a href="{{ route('riwayat.index') }}" class="btn btn-outline-primary">
-                                        <i class="bi bi-clock-history me-1"></i> Riwayat Saya
-                                    </a>
                                 @endif
                             </div>
                         </div>
@@ -203,28 +196,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 6. Reservasi Menunggu -->
-            <div class="col-6 col-lg-3 col-md-6">
-                <div class="card card-stat h-100 mb-0">
-                    <div class="card-body px-4 py-4-5">
-                        <div class="row align-items-center">
-                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
-                                <div class="stats-icon orange mb-2">
-                                    <i class="bi bi-bookmark-heart"></i>
-                                </div>
-                            </div>
-                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Reservasi Menunggu</h6>
-                                <h5 class="font-extrabold mb-1">{{ $reservationStats['pending'] ?? 0 }}</h5>
-                                <a href="{{ route('reservations.index') }}" class="text-warning fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-arrow-right me-1"></i>Kelola reservasi
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         @if($overdueCount > 0)
@@ -234,12 +205,9 @@
                     <div>
                         <strong><i class="bi bi-exclamation-octagon-fill me-1"></i>
                             {{ $overdueCount }} peminjaman melewati tenggat</strong>
-                        @if(!$isStaff)
-                            <span class="d-block small mt-1">Segera kembalikan buku untuk menghindari denda.</span>
-                        @endif
                     </div>
-                    <a href="{{ $isStaff ? route('borrowings.index') : route('riwayat.index') }}" class="btn btn-sm btn-danger fw-semibold">
-                        {{ $isStaff ? 'Buka Sirkulasi' : 'Lihat Riwayat' }}
+                    <a href="{{ route('borrowings.index') }}" class="btn btn-sm btn-danger fw-semibold">
+                        Buka Sirkulasi
                     </a>
                 </div>
             </div>
@@ -473,15 +441,9 @@
                 </div>
             </div>
             <div class="modal-footer">
-                @if($isStaff)
-                    <a href="{{ route('books.index') }}" class="btn btn-primary btn-sm">
-                        <i class="bi bi-gear me-1"></i> Kelola Data Buku
-                    </a>
-                @else
-                    <a href="{{ route('katalog.index') }}" class="btn btn-primary btn-sm">
-                        <i class="bi bi-journal-bookmark-fill me-1"></i> Buka Katalog
-                    </a>
-                @endif
+                <a href="{{ route('books.index') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-gear me-1"></i> Kelola Data Buku
+                </a>
                 <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
@@ -624,15 +586,9 @@
                 </div>
             </div>
             <div class="modal-footer">
-                @if($isStaff)
-                    <a href="{{ route('borrowings.index') }}" class="btn btn-success btn-sm">
-                        <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
-                    </a>
-                @else
-                    <a href="{{ route('riwayat.index') }}" class="btn btn-success btn-sm">
-                        <i class="bi bi-clock-history me-1"></i> Riwayat Saya
-                    </a>
-                @endif
+                <a href="{{ route('borrowings.index') }}" class="btn btn-success btn-sm">
+                    <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
+                </a>
                 <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
@@ -702,15 +658,9 @@
                     Total Akumulasi: Rp{{ number_format($sumDenda, 0, ',', '.') }}
                 </div>
                 <div class="d-flex gap-2">
-                    @if($isStaff)
-                        <a href="{{ route('borrowings.index') }}" class="btn btn-danger btn-sm">
-                            <i class="bi bi-file-earmark-text me-1"></i> Lihat Sirkulasi
-                        </a>
-                    @else
-                        <a href="{{ route('riwayat.index') }}" class="btn btn-danger btn-sm">
-                            <i class="bi bi-clock-history me-1"></i> Riwayat Saya
-                        </a>
-                    @endif
+                    <a href="{{ route('borrowings.index') }}" class="btn btn-danger btn-sm">
+                        <i class="bi bi-file-earmark-text me-1"></i> Lihat Sirkulasi
+                    </a>
                     <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>

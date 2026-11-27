@@ -6,7 +6,6 @@ use App\Enums\BorrowingStatus;
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
-use App\Models\Review;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -35,7 +34,6 @@ class AnalyticsController extends Controller
             'topBooks' => $this->topBorrowedBooks(),
             'topMembers' => $this->topBorrowingMembers(),
             'summary' => $this->summary($borrowingsInRange),
-            'recentReviews' => Review::with(['user', 'book'])->latest()->take(5)->get(),
         ]);
     }
 
@@ -133,7 +131,6 @@ class AnalyticsController extends Controller
     {
         return Book::query()
             ->withCount('borrowings')
-            ->withAvg('reviews', 'rating')
             ->has('borrowings')
             ->orderByDesc('borrowings_count')
             ->take(8)
@@ -179,8 +176,6 @@ class AnalyticsController extends Controller
             'active_borrowings' => Borrowing::query()->active()->count(),
             'total_books' => Book::query()->count(),
             'total_members' => User::query()->where('role', 'anggota')->count(),
-            'average_rating' => round((float) Review::query()->avg('rating'), 2),
-            'total_reviews' => Review::query()->count(),
         ];
     }
 }
