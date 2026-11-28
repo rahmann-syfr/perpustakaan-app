@@ -64,6 +64,17 @@ Dashboard (4 statistik wajib), kategori, buku (cover, pencarian, filter), anggot
 
 ---
 
+## 5. Ringkasan Aturan Migrasi UI (Neo-Brutalist)
+
+Aturan lengkap ada di `.agent/rules/neo-brutalist-ui.md`. Ringkasannya:
+- **Hanya UI**: jangan ubah route, controller, validasi, middleware, migration, atau seeder (catat kebutuhan DB baru di `docs/ui-migration-notes.md` dan tanya user).
+- **Data & Aset**: ganti semua data dummy Stitch dengan data Eloquent; tanpa CDN (`cdn.tailwindcss.com`), tanpa URL `googleusercontent`, gunakan Tailwind v4 `@theme` di `resources/css/app.css` via Vite dan Google Fonts (`Space Grotesk`, `Space Mono`, `Material Symbols Outlined`).
+- **Struktur & Desain**: satu layout Blade + komponen `x-ui.*`, sidebar mint 260px dengan `request()->routeIs()`, data user dinamis dari `Auth::user()`, ikuti `docs/design/stitch/DESIGN.md` (border 3px `#0A0A0A`, radius 0, hard shadow, zebra `#FFF6E0`, hover `#F3B6F5`), hapus elemen karangan backend.
+- **Larangan Keras**: tidak ada dark mode (`color-scheme: light`), tidak ada tampilan denda dalam bentuk apa pun, dan tidak ada fitur notifikasi/pengingat di UI.
+- **Role, Validasi & Verifikasi**: patuhi hak akses `admin`, `petugas`, `anggota`; error form pakai `@error` dan `old()`; akhir tiap fase jalankan `npm run build`, `php artisan test`, `php artisan route:list`, dan grep checklist.
+
+---
+
 <laravel-boost-guidelines>
 === foundation rules ===
 

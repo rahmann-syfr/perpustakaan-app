@@ -6,9 +6,6 @@
 @section('content')
 @php
     $currentUser = Auth::user();
-
-    // Seluruh data statistik & rincian modal sudah disiapkan oleh
-    // DashboardController agar query tidak terduplikasi di layer view.
     $booksList = $booksList ?? collect();
     $anggotaList = $anggotaList ?? collect();
     $dipinjamList = $dipinjamList ?? collect();
@@ -19,550 +16,396 @@
     $countDipinjam = $countDipinjam ?? $dipinjamList->count();
 
     $recentActivities = $recentActivities ?? collect();
-    $overdueBorrowings = $overdueBorrowings ?? collect();
     $overdueCount = $overdueCount ?? 0;
+
+    // 1. Tren peminjaman 6 bulan terakhir (batang HTML/CSS dari query DB)
+    $startMonth = now()->subMonths(5)->startOfMonth();
+    $monthlyRows = \App\Models\Borrowing::query()
+        ->whereDate('borrow_date', '>=', $startMonth->toDateString())
+        ->get(['borrow_date'])
+        ->groupBy(fn (\App\Models\Borrowing $b) => $b->borrow_date?->format('Y-m'))
+        ->map(fn ($g) => $g->count());
+
+    $barPalette = ['#d1c2ff', '#F9C32E', '#4FA8FF', '#A9D9BC', '#C4F04D', '#FF7A9C'];
+    $monthlyTrend = [];
+    for ($i = 0; $i < 6; $i++) {
+        $month = $startMonth->copy()->addMonths($i);
+        $key = $month->format('Y-m');
+        $monthlyTrend[] = [
+            'label' => strtoupper($month->locale('id')->translatedFormat('M')),
+            'fullLabel' => $month->locale('id')->translatedFormat('F Y'),
+            'count' => (int) ($monthlyRows[$key] ?? 0),
+            'color' => $barPalette[$i % count($barPalette)],
+        ];
+    }
+    $maxMonthly = max(1, collect($monthlyTrend)->max('count'));
+    $totalMonthly = collect($monthlyTrend)->sum('count');
+    $peakMonth = collect($monthlyTrend)->sortByDesc('count')->first();
+
+    // 2. Donut distribusi kategori (hitung stroke-dasharray di server)
+    $categoryChart = $categoryChart ?? ['labels' => [], 'values' => [], 'colors' => []];
+    $catTotal = array_sum($categoryChart['values']);
+    $neoPalette = ['#7B4DFF', '#F9C32E', '#4FA8FF', '#C4F04D', '#FF7A9C', '#A9D9BC', '#FF8A5B', '#F3B6F5'];
+    $circumference = 2 * pi() * 38;
+    $runningOffset = 0.0;
+    $donutSegments = [];
+
+    foreach ($categoryChart['labels'] as $idx => $catLabel) {
+        $val = (int) ($categoryChart['values'][$idx] ?? 0);
+        if ($catTotal <= 0 || $val <= 0) {
+            continue;
+        }
+        $pct = round(($val / $catTotal) * 100);
+        $dash = ($val / $catTotal) * $circumference;
+        $gap = max(0, $circumference - $dash);
+        $donutSegments[] = [
+            'label' => $catLabel,
+            'count' => $val,
+            'percent' => $pct,
+            'color' => $neoPalette[$idx % count($neoPalette)],
+            'dasharray' => number_format($dash, 2, '.', '') . ' ' . number_format($gap, 2, '.', ''),
+            'dashoffset' => number_format(-$runningOffset, 2, '.', ''),
+        ];
+        $runningOffset += $dash;
+    }
+
+    $latestBooks = $booksList->sortByDesc('id')->take(5);
+    $latestMembers = $anggotaList->take(5);
+    $latestBorrowings = $dipinjamList->take(5);
 @endphp
 
-<section class="row">
-    <div class="col-12">
-        
-        <!-- Banner Selamat Datang -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card perpus-welcome-card mb-0">
-                    <div class="card-body p-4">
-                        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar avatar-xl bg-primary me-3 me-md-4 flex-shrink-0">
-                                    <span class="avatar-content text-uppercase fs-3 fw-bold">{{ substr($currentUser->name, 0, 1) }}</span>
-                                </div>
-                                <div>
-                                    <h4 class="mb-1 fw-bold">Selamat datang kembali, {{ $currentUser->name }}!</h4>
-                                    <p class="mb-0 text-muted">
-                                        Anda login sebagai
-                                        <span class="badge bg-light-primary text-primary fw-semibold">{{ $currentUser->role->label() }}</span>
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Aksi Cepat -->
-                            <div class="d-flex flex-wrap gap-2">
-                                <a href="{{ route('borrowings.index') }}" class="btn btn-primary">
-                                    <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
-                                </a>
-                                <a href="{{ route('books.index') }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-book-half me-1"></i> Data Buku
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+<div class="space-y-8">
+    {{-- Banner Sambutan --}}
+    <x-ui.card :window="true" title="session.user" bodyClass="p-6 bg-[#FFF6E0]">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div class="space-y-2">
+                <div class="flex flex-wrap items-center gap-3">
+                    <h2 class="font-headline-lg text-[24px] md:text-[28px] font-extrabold text-[#0A0A0A] leading-tight m-0">
+                        Halo, {{ $currentUser->name }}!
+                    </h2>
+                    <x-ui.badge variant="violet">{{ strtoupper($currentUser->role->label()) }}</x-ui.badge>
                 </div>
+                <p class="font-mono text-[12px] font-bold text-[#4f4633] flex items-center gap-2 m-0">
+                    <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                    <span>{{ now()->locale('id')->translatedFormat('l, d F Y') }}</span>
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <x-ui.button variant="primary" icon="sync_alt" href="{{ route('borrowings.index') }}">
+                    Kelola Sirkulasi
+                </x-ui.button>
+                <x-ui.button variant="secondary" icon="menu_book" href="{{ route('books.index') }}">
+                    Data Buku
+                </x-ui.button>
             </div>
         </div>
+    </x-ui.card>
 
-        <!-- 4 Kartu Statistik Interaktif (Bisa Diklik Semua Role) -->
-        <div class="row g-3">
-            <!-- 1. Total Koleksi -->
-            <div class="col-6 col-lg-3 col-md-6">
-                <div class="card card-stat card-clickable h-100 mb-0"
-                     data-bs-toggle="modal"
-                     data-bs-target="#koleksiBukuModal"
-                     title="Klik untuk melihat rincian koleksi buku">
-                    <div class="card-body px-4 py-4-5">
-                        <div class="row align-items-center">
-                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
-                                <div class="stats-icon purple mb-2">
-                                    <i class="bi bi-book-half"></i>
-                                </div>
-                            </div>
-                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Total Koleksi</h6>
-                                <h5 class="font-extrabold mb-1">{{ $countBuku }} Judul</h5>
-                                <span class="text-primary fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-eye me-1"></i>Lihat rincian
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+    {{-- Strip Peringatan Buku Lewat Jatuh Tempo (hanya muncul jika ada) --}}
+    @if ($overdueCount > 0)
+        <div class="bg-[#FF7A9C] border-[3px] border-[#0A0A0A] neo-shadow-md p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 border-[3px] border-[#0A0A0A] bg-[#F9C32E] flex items-center justify-center shrink-0 neo-shadow-sm">
+                    <span class="material-symbols-outlined text-[#0A0A0A] text-[24px]">crisis_alert</span>
+                </div>
+                <div>
+                    <span class="font-headline-sm text-base font-extrabold text-[#0A0A0A] block">
+                        PERHATIAN: {{ $overdueCount }} BUKU MELEWATI BATAS PENGEMBALIAN!
+                    </span>
+                    <span class="font-mono text-xs text-[#0A0A0A]/90">
+                        Segera tindak lanjuti pengembalian pada halaman sirkulasi.
+                    </span>
                 </div>
             </div>
-
-            <!-- 2. Jumlah Stok Buku -->
-            <div class="col-6 col-lg-3 col-md-6">
-                <div class="card card-stat card-clickable h-100 mb-0"
-                     data-bs-toggle="modal"
-                     data-bs-target="#koleksiBukuModal"
-                     title="Klik untuk melihat rincian stok buku">
-                    <div class="card-body px-4 py-4-5">
-                        <div class="row align-items-center">
-                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
-                                <div class="stats-icon purple mb-2">
-                                    <i class="bi bi-boxes"></i>
-                                </div>
-                            </div>
-                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Jumlah Stok Buku</h6>
-                                <h5 class="font-extrabold mb-1">{{ $countStokBuku }}</h5>
-                                <span class="text-primary fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-eye me-1"></i>Total eksemplar
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Jumlah Member -->
-            <div class="col-6 col-lg-3 col-md-6">
-                <div class="card card-stat card-clickable h-100 mb-0"
-                     data-bs-toggle="modal"
-                     data-bs-target="#anggotaModal"
-                     title="Klik untuk melihat daftar anggota">
-                    <div class="card-body px-4 py-4-5">
-                        <div class="row align-items-center">
-                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
-                                <div class="stats-icon blue mb-2">
-                                    <i class="bi bi-people-fill"></i>
-                                </div>
-                            </div>
-                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Jumlah Member</h6>
-                                <h5 class="font-extrabold mb-1">{{ $countAnggota }}</h5>
-                                <span class="text-info fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-eye me-1"></i>Lihat anggota
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 4. Sedang Dipinjam -->
-            <div class="col-6 col-lg-3 col-md-6">
-                <div class="card card-stat card-clickable h-100 mb-0"
-                     data-bs-toggle="modal"
-                     data-bs-target="#bukuDipinjamModal"
-                     title="Klik untuk melihat daftar buku yang sedang dipinjam">
-                    <div class="card-body px-4 py-4-5">
-                        <div class="row align-items-center">
-                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
-                                <div class="stats-icon green mb-2">
-                                    <i class="bi bi-arrow-left-right"></i>
-                                </div>
-                            </div>
-                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Sedang Dipinjam</h6>
-                                <h5 class="font-extrabold mb-1">{{ $countDipinjam }}</h5>
-                                <span class="text-success fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-eye me-1"></i>Lihat rincian
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <x-ui.button variant="secondary" size="sm" icon="arrow_forward" href="{{ route('borrowings.index') }}">
+                Lihat Sirkulasi
+            </x-ui.button>
         </div>
+    @endif
 
-        @if($overdueCount > 0)
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="alert alert-danger border-0 perpus-alert-overdue mb-0 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
-                    <div>
-                        <strong><i class="bi bi-exclamation-octagon-fill me-1"></i>
-                            {{ $overdueCount }} peminjaman melewati tenggat</strong>
-                    </div>
-                    <a href="{{ route('borrowings.index') }}" class="btn btn-sm btn-danger fw-semibold">
-                        Buka Sirkulasi
-                    </a>
-                </div>
-            </div>
-        </div>
-        @endif
+    {{-- 4 Kartu Statistik Wajib --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <x-ui.stat-card
+            color="yellow"
+            icon="menu_book"
+            badge="Judul"
+            label="Total Koleksi"
+            :value="number_format($countBuku, 0, ',', '.')"
+            footerLeft="Katalog Buku"
+            footerRight="Lihat Rincian"
+            role="button"
+            tabindex="0"
+            data-modal-open="koleksiBukuModal"
+            class="cursor-pointer"
+        />
 
-        <div class="row g-4 mb-4">
-            <div class="col-lg-8">
-                <div class="card h-100 mb-0">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0"><i class="bi bi-graph-up text-primary me-1"></i> Tren Peminjaman 14 Hari</h5>
-                        <span class="badge bg-light-primary text-primary">Ringkasan</span>
-                    </div>
-                    <div class="card-body">
-                        <div style="position: relative; height: 260px;">
-                            <canvas id="dashboardTrendChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card h-100 mb-0">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0"><i class="bi bi-pie-chart text-primary me-1"></i> Kategori Dipinjam</h5>
-                    </div>
-                    <div class="card-body">
-                        @if(count($categoryChart['values']) > 0)
-                            <div style="position: relative; height: 260px;">
-                                <canvas id="dashboardCategoryChart"></canvas>
-                            </div>
-                        @else
-                            <div class="text-center text-muted py-5">
-                                <i class="bi bi-pie-chart d-block fs-2 mb-2 opacity-50"></i>
-                                Belum ada buku yang dipinjam.
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-ui.stat-card
+            color="mint"
+            icon="inventory_2"
+            badge="Eksemplar"
+            label="Jumlah Stok Buku"
+            :value="number_format($countStokBuku, 0, ',', '.')"
+            footerLeft="Total Stok"
+            footerRight="Lihat Rincian"
+            role="button"
+            tabindex="0"
+            data-modal-open="koleksiBukuModal"
+            class="cursor-pointer"
+        />
 
-        <div class="row g-4 mb-2">
-            <div class="col-lg-7">
-                <div class="card h-100 mb-0">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0"><i class="bi bi-lightning-charge-fill text-warning me-1"></i> Aktivitas Terbaru</h5>
-                        <span class="badge bg-light-primary text-primary">{{ $recentActivities->count() }} transaksi</span>
-                    </div>
-                    <div class="card-body p-0">
-                        <ul class="list-group list-group-flush perpus-activity-list">
-                            @forelse($recentActivities as $activity)
-                                <li class="list-group-item px-4 py-3">
-                                    <div class="d-flex justify-content-between align-items-start gap-2">
-                                        <div>
-                                            <div class="fw-semibold text-dark">
-                                                {{ $activity->book->title ?? 'Buku dihapus' }}
-                                            </div>
-                                            <small class="text-muted">
-                                                {{ $activity->member->name ?? 'Anggota' }} &bull;
-                                                {{ $activity->created_at->diffForHumans() }}
-                                            </small>
-                                        </div>
-                                        <span class="badge {{ $activity->status->badgeClass() }} fw-semibold">
-                                            {{ $activity->status->label() }}
-                                        </span>
-                                    </div>
-                                </li>
-                            @empty
-                                <li class="list-group-item text-center text-muted py-4">Belum ada aktivitas peminjaman.</li>
-                            @endforelse
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-5">
-                <div class="card h-100 mb-0">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0"><i class="bi bi-alarm text-danger me-1"></i> Prioritas Kembali</h5>
-                    </div>
-                    <div class="card-body">
-                        @forelse($overdueBorrowings as $item)
-                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                                <div>
-                                    <div class="fw-semibold">{{ $item->book->title ?? '-' }}</div>
-                                    <small class="text-muted">{{ $item->member->name ?? '-' }}</small>
-                                    <small class="text-danger d-block">Tenggat {{ $item->due_date?->format('d M Y') }}</small>
-                                </div>
-                                <i class="bi bi-exclamation-triangle text-danger"></i>
-                            </div>
-                        @empty
-                            <p class="text-muted text-center py-3 mb-0"><i class="bi bi-emoji-smile text-success me-1"></i> Semua buku tepat waktu!</p>
-                        @endforelse
-                    </div>
-                </div>
-            </div>
-        </div>
+        <x-ui.stat-card
+            color="sky"
+            icon="badge"
+            badge="Anggota"
+            label="Jumlah Member"
+            :value="number_format($countAnggota, 0, ',', '.')"
+            footerLeft="Data Anggota"
+            footerRight="Lihat Rincian"
+            role="button"
+            tabindex="0"
+            data-modal-open="anggotaModal"
+            class="cursor-pointer"
+        />
 
+        <x-ui.stat-card
+            color="pink"
+            icon="swap_horiz"
+            badge="Aktif"
+            label="Sedang Dipinjam"
+            :value="number_format($countDipinjam, 0, ',', '.')"
+            footerLeft="Sirkulasi Aktif"
+            footerRight="Lihat Rincian"
+            role="button"
+            tabindex="0"
+            data-modal-open="bukuDipinjamModal"
+            class="cursor-pointer"
+        />
     </div>
-</section>
+
+    {{-- Grafik Tren 6 Bulan & Donut Distribusi Kategori --}}
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {{-- Kiri: Tren Peminjaman 6 Bulan Terakhir --}}
+        <div class="lg:col-span-7 bg-white border-[3px] border-[#0A0A0A] neo-shadow-md p-6 flex flex-col justify-between">
+            <div>
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b-[3px] border-[#0A0A0A] mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 border-[2px] border-[#0A0A0A] bg-[#FFF6E0] flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px] text-[#0A0A0A]">bar_chart</span>
+                        </div>
+                        <div>
+                            <h2 class="font-headline-sm text-base uppercase text-[#0A0A0A] m-0">Tren Peminjaman Buku</h2>
+                            <span class="font-mono text-[11px] text-[#4f4633]">
+                                {{ $monthlyTrend[0]['fullLabel'] }} &ndash; {{ $monthlyTrend[5]['fullLabel'] }}
+                            </span>
+                        </div>
+                    </div>
+                    <span class="bg-[#C4F04D] border-[2px] border-[#0A0A0A] px-2.5 py-1 font-mono text-[11px] font-bold">
+                        TOTAL: {{ number_format($totalMonthly, 0, ',', '.') }} PINJAMAN
+                    </span>
+                </div>
+
+                <div class="w-full h-64 relative flex items-end justify-between pt-8 pb-4 px-2">
+                    <div class="absolute inset-x-2 top-8 bottom-4 flex flex-col justify-between pointer-events-none opacity-25">
+                        <div class="w-full border-b-[2px] border-dashed border-[#0A0A0A]"></div>
+                        <div class="w-full border-b-[2px] border-dashed border-[#0A0A0A]"></div>
+                        <div class="w-full border-b-[2px] border-dashed border-[#0A0A0A]"></div>
+                        <div class="w-full border-b-[2px] border-[#0A0A0A]"></div>
+                    </div>
+
+                    @foreach ($monthlyTrend as $bar)
+                        @php
+                            $heightPct = $bar['count'] > 0 ? max(8, (int) round(($bar['count'] / $maxMonthly) * 100)) : 4;
+                        @endphp
+                        <div class="relative flex flex-col items-center flex-1 z-10 h-full justify-end group">
+                            <span class="font-mono text-[11px] font-bold mb-1 text-[#0A0A0A]">{{ $bar['count'] }}</span>
+                            <div
+                                class="w-8 md:w-11 border-[3px] border-[#0A0A0A] neo-shadow-sm transition-all"
+                                style="height: {{ $heightPct }}%; background-color: {{ $bar['color'] }};"
+                                title="{{ $bar['fullLabel'] }}: {{ $bar['count'] }} pinjaman"
+                            ></div>
+                            <span class="font-mono text-[11px] font-bold mt-2 uppercase text-[#0A0A0A]">{{ $bar['label'] }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t-[3px] border-[#0A0A0A] flex items-center justify-between text-xs font-mono">
+                <span class="text-[#0A0A0A]">
+                    @if ($totalMonthly > 0 && $peakMonth)
+                        Peminjaman tertinggi: {{ $peakMonth['fullLabel'] }} ({{ $peakMonth['count'] }} transaksi).
+                    @else
+                        Belum ada transaksi peminjaman dalam 6 bulan terakhir.
+                    @endif
+                </span>
+            </div>
+        </div>
+
+        {{-- Kanan: Donut Distribusi Kategori --}}
+        <div class="lg:col-span-5 bg-white border-[3px] border-[#0A0A0A] neo-shadow-md p-6 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between gap-3 pb-4 border-b-[3px] border-[#0A0A0A] mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 border-[2px] border-[#0A0A0A] bg-[#FFF6E0] flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[20px] text-[#0A0A0A]">pie_chart</span>
+                        </div>
+                        <div>
+                            <h2 class="font-headline-sm text-base uppercase text-[#0A0A0A] m-0">Distribusi Kategori</h2>
+                            <span class="font-mono text-[11px] text-[#4f4633]">Pinjaman Aktif Saat Ini</span>
+                        </div>
+                    </div>
+                    <span class="bg-[#FFF6E0] border-[2px] border-[#0A0A0A] px-2 py-0.5 font-mono text-[10px] font-bold">
+                        {{ count($donutSegments) }} KATEGORI
+                    </span>
+                </div>
+
+                @if (count($donutSegments) > 0)
+                    <div class="flex flex-col sm:flex-row items-center justify-around gap-6 py-2">
+                        <div class="relative w-44 h-44 shrink-0 flex items-center justify-center">
+                            <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100" aria-label="Grafik distribusi kategori">
+                                <circle cx="50" cy="50" fill="none" r="38" stroke="#0A0A0A" stroke-width="20"></circle>
+                                @foreach ($donutSegments as $seg)
+                                    <circle
+                                        cx="50"
+                                        cy="50"
+                                        fill="none"
+                                        r="38"
+                                        stroke="{{ $seg['color'] }}"
+                                        stroke-dasharray="{{ $seg['dasharray'] }}"
+                                        stroke-dashoffset="{{ $seg['dashoffset'] }}"
+                                        stroke-width="16"
+                                    ></circle>
+                                @endforeach
+                                <circle cx="50" cy="50" fill="#FFFFFF" r="29" stroke="#0A0A0A" stroke-width="3"></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="font-headline-sm text-base text-[#0A0A0A] font-extrabold leading-none">{{ $catTotal }}</span>
+                                <span class="font-mono text-[9px] uppercase text-[#4f4633] font-bold mt-1">DIPINJAM</span>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-2 w-full">
+                            @foreach (array_slice($donutSegments, 0, 5) as $seg)
+                                <div class="flex items-center justify-between border-[2px] border-[#0A0A0A] p-2 bg-[#FFF6E0]">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <div class="w-3.5 h-3.5 border-[2px] border-[#0A0A0A] shrink-0" style="background-color: {{ $seg['color'] }};"></div>
+                                        <span class="font-headline-sm text-xs font-bold text-[#0A0A0A] truncate">{{ $seg['label'] }}</span>
+                                    </div>
+                                    <span class="font-mono text-xs font-bold text-[#0A0A0A] shrink-0 ml-2">{{ $seg['percent'] }}%</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <x-ui.empty-state
+                        icon="pie_chart"
+                        title="Belum Ada Pinjaman Aktif"
+                        description="Distribusi kategori akan tampil setelah ada buku yang sedang dipinjam."
+                    />
+                @endif
+            </div>
+        </div>
+    </div>
+
+    {{-- Aktivitas Terbaru --}}
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="font-headline-md text-[20px] font-extrabold uppercase text-[#0A0A0A] m-0">Aktivitas Terbaru</h2>
+            <x-ui.button variant="secondary" size="sm" href="{{ route('borrowings.index') }}">Semua Sirkulasi</x-ui.button>
+        </div>
+
+        @if ($recentActivities->isNotEmpty())
+            <x-ui.table :headers="['Anggota', 'Buku', 'Tanggal Pinjam', 'Status']">
+                @foreach ($recentActivities as $activity)
+                    <tr>
+                        <td class="font-bold">{{ $activity->member->name ?? 'Anggota Terhapus' }}</td>
+                        <td>{{ $activity->book->title ?? 'Buku Dihapus' }}</td>
+                        <td class="font-mono text-xs">{{ $activity->borrow_date?->format('d/m/Y') ?? '-' }}</td>
+                        <td>
+                            @if ($activity->isOverdue())
+                                <x-ui.badge status="TERLAMBAT" />
+                            @else
+                                <x-ui.badge :status="$activity->status->value" />
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </x-ui.table>
+        @else
+            <x-ui.empty-state
+                icon="history"
+                title="Belum Ada Aktivitas"
+                description="Transaksi peminjaman dan pengembalian terbaru akan muncul di sini."
+            />
+        @endif
+    </div>
+</div>
 @endsection
 
-@push('scripts')
-<script src="{{ asset('assets/extensions/chart.js/chart.umd.js') }}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        Chart.defaults.font.family = "'Plus Jakarta Sans', system-ui, sans-serif";
-        Chart.defaults.color = '#64748b';
-
-        const trendCanvas = document.getElementById('dashboardTrendChart');
-        if (trendCanvas) {
-            const gradient = trendCanvas.getContext('2d').createLinearGradient(0, 0, 0, 260);
-            gradient.addColorStop(0, 'rgba(13, 148, 136, 0.35)');
-            gradient.addColorStop(1, 'rgba(13, 148, 136, 0)');
-
-            new Chart(trendCanvas, {
-                type: 'line',
-                data: {
-                    labels: @json($trendChart['labels']),
-                    datasets: [{
-                        label: 'Peminjaman',
-                        data: @json($trendChart['values']),
-                        borderColor: '#0d9488',
-                        backgroundColor: gradient,
-                        fill: true,
-                        tension: 0.35,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        borderWidth: 2.5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false }, border: { display: false } },
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(148, 163, 184, 0.18)' },
-                            border: { display: false },
-                            ticks: { precision: 0 }
-                        }
-                    }
-                }
-            });
-        }
-
-        const categoryCanvas = document.getElementById('dashboardCategoryChart');
-        if (categoryCanvas) {
-            new Chart(categoryCanvas, {
-                type: 'doughnut',
-                data: {
-                    labels: @json($categoryChart['labels']),
-                    datasets: [{
-                        data: @json($categoryChart['values']),
-                        backgroundColor: @json($categoryChart['colors']),
-                        borderWidth: 0,
-                        hoverOffset: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '60%',
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
-        }
-    });
-</script>
-@endpush
-
 @push('modals')
-<!-- 1. Modal Rincian Total Koleksi -->
-<div class="modal fade" id="koleksiBukuModal" tabindex="-1" aria-labelledby="koleksiBukuModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title text-white" id="koleksiBukuModalLabel">
-                    <i class="bi bi-journal-text me-2"></i>Rincian Stok Koleksi Buku
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control modal-table-search" data-target-table="tableModalKoleksi" placeholder="Filter judul buku atau penulis...">
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="tableModalKoleksi">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 55px;">No</th>
-                                <th>Judul Buku</th>
-                                <th class="text-center" style="width: 120px;">Stok Total</th>
-                                <th class="text-center" style="width: 140px;">Stok Tersedia</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($booksList as $index => $book)
-                            <tr>
-                                <td class="text-muted">{{ $index + 1 }}</td>
-                                <td>
-                                    <div class="fw-semibold text-dark">{{ $book->title }}</div>
-                                    <small class="text-muted">{{ $book->author }}</small>
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-light-secondary text-dark">{{ $book->total_stock }}</span>
-                                </td>
-                                <td class="text-center">
-                                    @if($book->available_stock > 0)
-                                        <span class="badge bg-light-success text-success">{{ $book->available_stock }} Tersedia</span>
-                                    @else
-                                        <span class="badge bg-light-danger text-danger">Habis</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-4">Belum ada koleksi buku.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <a href="{{ route('books.index') }}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-gear me-1"></i> Kelola Data Buku
-                </a>
-                <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
+    {{-- Modal 1: 5 Buku Terbaru --}}
+    <x-ui.modal id="koleksiBukuModal" title="Koleksi Buku Terbaru" size="lg">
+        @if ($latestBooks->isNotEmpty())
+            <x-ui.table :headers="['Judul Buku', 'Penulis', 'Stok Tersedia']">
+                @foreach ($latestBooks as $book)
+                    <tr>
+                        <td class="font-bold">{{ $book->title }}</td>
+                        <td>{{ $book->author }}</td>
+                        <td class="font-mono text-xs">{{ $book->available_stock }} / {{ $book->total_stock }}</td>
+                    </tr>
+                @endforeach
+            </x-ui.table>
+        @else
+            <x-ui.empty-state icon="menu_book" title="Belum Ada Buku" description="Belum ada koleksi buku terdaftar." />
+        @endif
 
-<!-- 2. Modal Rincian Total Anggota -->
-<div class="modal fade" id="anggotaModal" tabindex="-1" aria-labelledby="anggotaModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title text-white" id="anggotaModalLabel">
-                    <i class="bi bi-people-fill me-2"></i>Daftar Anggota Peminjam ({{ $countAnggota }})
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control modal-table-search" data-target-table="tableModalAnggota" placeholder="Filter nama anggota...">
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="tableModalAnggota">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 55px;">No</th>
-                                <th>Nama Anggota</th>
-                                <th>Email</th>
-                                <th class="text-center" style="width: 140px;">Tgl Terdaftar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($anggotaList as $index => $anggota)
-                            <tr>
-                                <td class="text-muted">{{ $index + 1 }}</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar avatar-sm bg-primary me-2 flex-shrink-0">
-                                            <span class="avatar-content text-uppercase fw-bold" style="font-size: 0.72rem;">
-                                                {{ substr($anggota->name, 0, 1) }}
-                                            </span>
-                                        </div>
-                                        <span class="fw-semibold text-dark">{{ $anggota->name }}</span>
-                                    </div>
-                                </td>
-                                <td class="text-muted">{{ $anggota->email }}</td>
-                                <td class="text-center text-muted">
-                                    {{ \Carbon\Carbon::parse($anggota->created_at)->format('d M Y') }}
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-4">Belum ada anggota terdaftar.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <a href="{{ route('members.index') }}" class="btn btn-info text-white btn-sm">
-                    <i class="bi bi-people me-1"></i> Data Anggota
-                </a>
-                <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
+        <x-slot:footer>
+            <x-ui.button variant="secondary" size="sm" data-modal-close="koleksiBukuModal">Tutup</x-ui.button>
+            <x-ui.button variant="primary" size="sm" href="{{ route('books.index') }}">Lihat Semua Buku</x-ui.button>
+        </x-slot:footer>
+    </x-ui.modal>
 
-<!-- 3. Modal Rincian Buku Sedang Dipinjam -->
-<div class="modal fade" id="bukuDipinjamModal" tabindex="-1" aria-labelledby="bukuDipinjamModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title text-white" id="bukuDipinjamModalLabel">
-                    <i class="bi bi-arrow-left-right me-2"></i>Rincian Buku Sedang Dipinjam ({{ $countDipinjam }})
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control modal-table-search" data-target-table="tableModalDipinjam" placeholder="Filter judul buku atau nama peminjam...">
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="tableModalDipinjam">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 55px;">No</th>
-                                <th>Judul Buku</th>
-                                <th>Peminjam</th>
-                                <th class="text-center">Tgl Pinjam</th>
-                                <th class="text-center">Batas Kembali</th>
-                                <th class="text-center">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($dipinjamList as $index => $pinjam)
-                            @php
-                                $dueDate = $pinjam->due_date?->copy()->startOfDay() ?? now()->startOfDay();
-                                $isLate = $pinjam->isOverdue();
-                            @endphp
-                            <tr>
-                                <td class="text-muted">{{ $index + 1 }}</td>
-                                <td class="fw-semibold text-dark">{{ $pinjam->book->title ?? 'Buku Dihapus' }}</td>
-                                <td>{{ $pinjam->member->name ?? 'Anggota Dihapus' }}</td>
-                                <td class="text-center">{{ \Carbon\Carbon::parse($pinjam->borrow_date)->format('d M Y') }}</td>
-                                <td class="text-center">
-                                    <span class="{{ $isLate ? 'text-danger fw-bold' : '' }}">
-                                        {{ $dueDate->format('d M Y') }}
-                                    </span>
-                                </td>
-                                <td class="text-center">
-                                    @if($isLate)
-                                        <span class="badge bg-light-danger text-danger">Terlambat</span>
-                                    @else
-                                        <span class="badge bg-light-warning text-warning">Dipinjam</span>
-                                    @endif
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">Tidak ada buku yang sedang dipinjam saat ini.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <a href="{{ route('borrowings.index') }}" class="btn btn-success btn-sm">
-                    <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
-                </a>
-                <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
-@endpush
+    {{-- Modal 2: 5 Anggota Terbaru --}}
+    <x-ui.modal id="anggotaModal" title="Anggota Terbaru" size="lg">
+        @if ($latestMembers->isNotEmpty())
+            <x-ui.table :headers="['Nama Anggota', 'Email', 'No. HP']">
+                @foreach ($latestMembers as $member)
+                    <tr>
+                        <td class="font-bold">{{ $member->name }}</td>
+                        <td class="font-mono text-xs">{{ $member->email }}</td>
+                        <td class="font-mono text-xs">{{ $member->phone ?: '-' }}</td>
+                    </tr>
+                @endforeach
+            </x-ui.table>
+        @else
+            <x-ui.empty-state icon="badge" title="Belum Ada Anggota" description="Belum ada anggota terdaftar." />
+        @endif
 
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.modal-table-search').forEach(input => {
-            input.addEventListener('keyup', function () {
-                const keyword = this.value.toLowerCase();
-                const tableId = this.dataset.targetTable;
-                const rows = document.querySelectorAll(`#${tableId} tbody tr`);
-                rows.forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(keyword) ? '' : 'none';
-                });
-            });
-        });
-    });
-</script>
+        <x-slot:footer>
+            <x-ui.button variant="secondary" size="sm" data-modal-close="anggotaModal">Tutup</x-ui.button>
+            <x-ui.button variant="primary" size="sm" href="{{ route('members.index') }}">Lihat Semua Anggota</x-ui.button>
+        </x-slot:footer>
+    </x-ui.modal>
+
+    {{-- Modal 3: 5 Peminjaman Aktif Terbaru --}}
+    <x-ui.modal id="bukuDipinjamModal" title="Sedang Dipinjam (Terbaru)" size="lg">
+        @if ($latestBorrowings->isNotEmpty())
+            <x-ui.table :headers="['Peminjam', 'Buku', 'Jatuh Tempo']">
+                @foreach ($latestBorrowings as $pinjam)
+                    <tr>
+                        <td class="font-bold">{{ $pinjam->member->name ?? 'Anggota Terhapus' }}</td>
+                        <td>{{ $pinjam->book->title ?? 'Buku Dihapus' }}</td>
+                        <td class="font-mono text-xs">{{ $pinjam->due_date?->format('d/m/Y') ?? '-' }}</td>
+                    </tr>
+                @endforeach
+            </x-ui.table>
+        @else
+            <x-ui.empty-state icon="swap_horiz" title="Tidak Ada Pinjaman Aktif" description="Semua buku sedang tersedia di perpustakaan." />
+        @endif
+
+        <x-slot:footer>
+            <x-ui.button variant="secondary" size="sm" data-modal-close="bukuDipinjamModal">Tutup</x-ui.button>
+            <x-ui.button variant="primary" size="sm" href="{{ route('borrowings.index') }}">Lihat Semua Sirkulasi</x-ui.button>
+        </x-slot:footer>
+    </x-ui.modal>
 @endpush

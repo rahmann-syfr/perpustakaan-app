@@ -144,7 +144,6 @@ body::after{width:360px;height:360px;bottom:-100px;left:-60px;background:radial-
 /* --- Notifikasi --- */
 .perpus-notification-icon{width:44px;height:44px;border-radius:.85rem;display:inline-flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0}
 .perpus-notification-unread{background:rgba(13,148,136,.045);border-left:3px solid var(--perpus-primary)}
-[data-theme="dark"] .perpus-notification-unread{background:rgba(45,212,191,.06)}
 /* --- Star rating picker ---
    Struktur DOM: <input id=rating5><label>5</label><input id=rating4><label>4</label> ...
    Radio di-render dari 5 ke 1, sehingga label berada DI SETELAH input-nya.
@@ -170,7 +169,6 @@ body::after{width:360px;height:360px;bottom:-100px;left:-60px;background:radial-
 .perpus-info-list li{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.7rem 0;border-bottom:1px dashed rgba(13,148,136,.18)}
 .perpus-info-list li:last-child{border-bottom:none}
 .perpus-info-list .label{color:#64748b;font-size:.9rem}
-[data-theme="dark"] .perpus-info-list .label{color:#94a3b8}
 .perpus-preview-box{background:rgba(13,148,136,.06);border:1px solid rgba(13,148,136,.16);border-radius:.85rem}
 
 /* --- Toast notification (vanilla JS) --- */
@@ -189,9 +187,6 @@ body::after{width:360px;height:360px;bottom:-100px;left:-60px;background:radial-
 .perpus-toast--warning>i{color:#d97706}
 .perpus-toast--info{border-left:3px solid var(--perpus-primary)}
 .perpus-toast--info>i{color:var(--perpus-primary)}
-[data-theme="dark"] .perpus-toast{background:rgba(15,23,42,.97);border-color:rgba(45,212,191,.2);color:#cbd5e1}
-[data-theme="dark"] .perpus-toast__close{color:#64748b}
-[data-theme="dark"] .perpus-toast__close:hover{color:#e2e8f0;background:rgba(148,163,184,.14)}
 
 /* --- Dialog konfirmasi kustom --- */
 .perpus-modal-backdrop{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;padding:1.25rem;background:rgba(15,23,42,.55);backdrop-filter:blur(6px);opacity:0;transition:opacity .25s ease}
@@ -206,9 +201,6 @@ body::after{width:360px;height:360px;bottom:-100px;left:-60px;background:radial-
 .perpus-modal__text{font-size:.92rem;color:#64748b;margin:0 0 1.4rem;line-height:1.55}
 .perpus-modal__actions{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
 .perpus-modal__actions .btn{min-width:8.5rem;font-weight:600}
-[data-theme="dark"] .perpus-modal{background:#1e293b}
-[data-theme="dark"] .perpus-modal__title{color:#f1f5f9}
-[data-theme="dark"] .perpus-modal__text{color:#94a3b8}
 
 /* --- Rating preview --- */
 .perpus-rating-preview{transition:opacity .2s}
@@ -221,34 +213,13 @@ body::after{width:360px;height:360px;bottom:-100px;left:-60px;background:radial-
 .perpus-table-empty:not([hidden]){animation:perpusFadeUp .35s ease both}
 .perpus-table-empty i{display:block;font-size:2.5rem;margin-bottom:.75rem;opacity:.5}
 .perpus-table-empty p{color:#64748b}
-[data-theme="dark"] .perpus-table-empty{background:rgba(45,212,191,.06);border-color:rgba(45,212,191,.15)}
 
 /* --- Counter hasil pencarian --- */
 .perpus-table-counter{font-size:.8rem;color:#94a3b8;font-weight:500}
-[data-theme="dark"] .perpus-preview-box{background:rgba(45,212,191,.08);border-color:rgba(45,212,191,.18)}
 
 .perpus-notification-dot{font-size:.68rem;line-height:1;padding:.35em .55em}
 
 .perpus-book-rating{display:inline-flex;align-items:center;gap:.2rem;font-size:.85rem;color:#f59e0b}
-
-
-/* --- Dark mode --- */
-.perpus-theme-toggle{background:rgba(13,148,136,.1);border:1px solid rgba(13,148,136,.2);color:var(--perpus-primary);border-radius:.65rem;width:2.35rem;height:2.35rem;display:inline-flex;align-items:center;justify-content:center;transition:transform .2s,background .2s}
-.perpus-theme-toggle:hover{transform:rotate(-8deg) scale(1.05);background:rgba(13,148,136,.18)}
-[data-theme="dark"]{color-scheme:dark;--perpus-shadow:0 4px 24px -4px rgba(0,0,0,.45)}
-[data-theme="dark"] body{background:linear-gradient(135deg,#0f172a,#1e293b 50%,#0f172a);color:#e2e8f0}
-[data-theme="dark"] body::before,[data-theme="dark"] body::after{opacity:.25}
-[data-theme="dark"] .perpus-page-title,[data-theme="dark"] .card-title,[data-theme="dark"] .fw-bold.text-dark,[data-theme="dark"] .text-dark{color:#f1f5f9!important}
-[data-theme="dark"] .text-muted{color:#94a3b8!important}
-[data-theme="dark"] .card,[data-theme="dark"] .modal-content{background:rgba(30,41,59,.92);border-color:rgba(45,212,191,.12)}
-[data-theme="dark"] .card-header{background:rgba(15,23,42,.65);border-color:rgba(45,212,191,.1)}
-[data-theme="dark"] .perpus-sidebar{background:rgba(15,23,42,.96);border-color:rgba(45,212,191,.1)}
-[data-theme="dark"] .perpus-nav-link{color:#94a3b8}
-[data-theme="dark"] .perpus-nav-link:hover{color:#5eead4;background:rgba(13,148,136,.12)}
-[data-theme="dark"] .table-light{--bs-table-bg:rgba(15,23,42,.6);--bs-table-color:#e2e8f0}
-[data-theme="dark"] .list-group-item{background:transparent;border-color:rgba(45,212,191,.08);color:#e2e8f0}
-[data-theme="dark"] .form-control,[data-theme="dark"] .form-select{background:rgba(15,23,42,.8);border-color:rgba(45,212,191,.15);color:#e2e8f0}
-[data-theme="dark"] .perpus-footer{border-color:rgba(45,212,191,.1);color:#64748b}
 
 /* --- Member card & activity --- */
 .perpus-member-card{position:relative;overflow:hidden;border:1px solid rgba(13,148,136,.2);background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(204,251,241,.35))}
@@ -258,7 +229,5 @@ body::after{width:360px;height:360px;bottom:-100px;left:-60px;background:radial-
 .perpus-alert-overdue{background:linear-gradient(135deg,rgba(220,53,69,.12),rgba(254,226,226,.4))!important;border-left:4px solid #dc3545!important}
 .perpus-activity-list .list-group-item{transition:background .15s}
 .perpus-activity-list .list-group-item:hover{background:rgba(13,148,136,.05)}
-[data-theme="dark"] .perpus-member-card{background:linear-gradient(145deg,rgba(30,41,59,.95),rgba(15,118,110,.25))}
-[data-theme="dark"] .perpus-sidebar__profile h6{color:#f1f5f9!important}
 
 .pagination .page-item.active .page-link{background:var(--perpus-primary);border-color:var(--perpus-primary)}
