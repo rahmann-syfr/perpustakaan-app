@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\Role;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -24,10 +23,7 @@ return new class extends Migration
         $driver = Schema::getConnection()->getDriverName();
 
         if (in_array($driver, ['mysql', 'mariadb'], true)) {
-            DB::statement(sprintf(
-                "ALTER TABLE `users` MODIFY COLUMN `role` VARCHAR(255) NOT NULL DEFAULT '%s'",
-                Role::Anggota->value
-            ));
+            DB::statement("ALTER TABLE `users` MODIFY COLUMN `role` VARCHAR(255) NOT NULL DEFAULT 'anggota'");
 
             return;
         }
@@ -41,7 +37,7 @@ return new class extends Migration
         }
 
         Schema::table('users', function (Blueprint $table): void {
-            $table->string('role')->default(Role::Anggota->value)->index();
+            $table->string('role')->default('anggota')->index();
         });
     }
 
@@ -52,23 +48,15 @@ return new class extends Migration
     {
         // Kembalikan nilai role yang tidak valid ke default sebelum constrain.
         DB::table('users')
-            ->whereNotIn('role', [
-                Role::Superadmin->value,
-                Role::Admin->value,
-                Role::Anggota->value,
-            ])
-            ->update(['role' => Role::Anggota->value]);
+            ->whereNotIn('role', ['superadmin', 'admin', 'anggota'])
+            ->update(['role' => 'anggota']);
 
         Schema::table('users', function (Blueprint $table): void {
             $table->dropColumn('role');
         });
 
         Schema::table('users', function (Blueprint $table): void {
-            $table->enum('role', [
-                Role::Superadmin->value,
-                Role::Admin->value,
-                Role::Anggota->value,
-            ])->default(Role::Anggota->value);
+            $table->enum('role', ['superadmin', 'admin', 'anggota'])->default('anggota');
         });
     }
 };

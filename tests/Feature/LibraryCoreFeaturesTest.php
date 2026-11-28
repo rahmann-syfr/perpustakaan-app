@@ -50,14 +50,11 @@ it('menolak perpanjangan melebihi batas maksimum', function () {
     SystemSetting::flush();
 });
 
-it('anggota tidak dapat memperpanjang peminjaman sendiri', function () {
-    $anggota = User::factory()->anggota()->create();
+it('tamu tidak dapat memperpanjang peminjaman', function () {
     $borrowing = Borrowing::factory()->create();
 
-    // Middleware role mengarahkan anggota kembali ke dashboard.
-    $this->actingAs($anggota)
-        ->post(route('borrowings.extend', $borrowing))
-        ->assertRedirect(route('dashboard'));
+    $this->post(route('borrowings.extend', $borrowing), ['days' => 7])
+        ->assertRedirect(route('login'));
 
     expect($borrowing->refresh()->extension_count)->toBe(0);
 });
@@ -104,12 +101,9 @@ it('menolak pembayaran pada transaksi tanpa denda', function () {
         ->assertSessionHasErrors('amount');
 });
 
-it('anggota tidak dapat mengakses halaman pembayaran denda', function () {
-    $anggota = User::factory()->anggota()->create();
-
-    $this->actingAs($anggota)
-        ->get(route('fines.index'))
-        ->assertRedirect(route('dashboard'));
+it('tamu tidak dapat mengakses halaman pembayaran denda', function () {
+    $this->get(route('fines.index'))
+        ->assertRedirect(route('login'));
 });
 
 it('pengguna dapat memperbarui profilnya sendiri', function () {

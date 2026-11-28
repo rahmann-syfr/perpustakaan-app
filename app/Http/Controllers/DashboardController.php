@@ -6,25 +6,20 @@ use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\FinePayment;
 use App\Models\Member;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
     /**
-     * Halaman dashboard untuk staf perpustakaan (Admin & Petugas).
+     * Halaman dashboard untuk Admin dan Petugas.
      */
-    public function index(Request $request): View
+    public function index(): View
     {
-        $user = $request->user();
-        $isStaff = $user->role->isStaff();
-        $canViewMemberStats = $user->role->canManageUsers();
-
-        // Menghitung jumlah JUDUL BUKU (bukan total stok fisik).
+        // 4 statistik wajib: Jumlah Judul Buku, Jumlah Stok Buku, Jumlah Member, Sedang Dipinjam.
         $countBuku = Book::count();
-        $countAnggota = $canViewMemberStats ? Member::count() : 0;
+        $countStokBuku = (int) Book::sum('total_stock');
+        $countAnggota = Member::count();
 
-        // Rincian koleksi (maksimal 200 judul terbaru).
         $booksList = Book::query()
             ->orderBy('title')
             ->take(200)
@@ -67,9 +62,8 @@ class DashboardController extends Controller
         $paidFineTotal = (int) FinePayment::query()->sum('amount');
 
         return view('dashboard', [
-            'isStaff' => $isStaff,
-            'canViewMemberStats' => $canViewMemberStats,
             'countBuku' => $countBuku,
+            'countStokBuku' => $countStokBuku,
             'booksList' => $booksList,
             'countAnggota' => $countAnggota,
             'anggotaList' => $anggotaList,
@@ -77,7 +71,6 @@ class DashboardController extends Controller
             'dipinjamList' => $dipinjamList,
             'sumDenda' => $dendaList->sum('fine_amount'),
             'dendaList' => $dendaList,
-            'pinjamanAktifSaya' => $dipinjamList->count(),
             'recentActivities' => $recentActivities,
             'overdueBorrowings' => $overdueBorrowings,
             'overdueCount' => $overdueCount,

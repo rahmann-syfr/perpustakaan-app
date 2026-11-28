@@ -8,7 +8,7 @@ class StoreBookRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role->isStaff() ?? false;
+        return $this->user() !== null;
     }
 
     /**

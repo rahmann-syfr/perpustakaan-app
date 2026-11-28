@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Data User - PerpusApp')
-@section('page-title', 'Manajemen User & Anggota')
+@section('page-title', 'Manajemen User')
 
 @section('content')
 @php
@@ -15,11 +15,7 @@
                 <div>
                     <h4 class="card-title mb-1">Daftar Pengguna Sistem</h4>
                     <p class="text-muted small mb-0">
-                        @if($currentUser->role === \App\Enums\Role::Superadmin)
-                            Otoritas Superadmin aktif: Anda memiliki akses penuh terhadap seluruh akun pengguna.
-                        @else
-                            Otoritas Admin: Anda hanya dapat mengelola akun Petugas, Anggota, dan profil pribadi Anda.
-                        @endif
+                        Kelola akun staf perpustakaan (Admin dan Petugas).
                     </p>
                 </div>
                 <a href="{{ route('users.create') }}" class="btn btn-primary">
@@ -92,11 +88,7 @@
                                         <td class="text-muted">{{ $user->email }}</td>
                                         <td class="text-center">
                                             <span class="badge {{ $user->role->badgeClass() }} fw-semibold">
-                                                @if($user->role === \App\Enums\Role::Superadmin)
-                                                    <i class="bi bi-shield-lock-fill me-1"></i>Superadmin
-                                                @else
-                                                    {{ $user->role->label() }}
-                                                @endif
+                                                {{ $user->role->label() }}
                                             </span>
                                         </td>
                                         <td>{{ \Carbon\Carbon::parse($user->created_at)->format('d M Y') }}</td>
@@ -126,9 +118,7 @@
                                                     @endif
                                                 </div>
                                             @else
-                                                <span class="badge bg-light-secondary text-muted fw-normal"
-                                                      data-bs-toggle="tooltip"
-                                                      title="Hanya Superadmin yang dapat mengubah akun ini">
+                                                <span class="badge bg-light-secondary text-muted fw-normal">
                                                     <i class="bi bi-lock-fill me-1"></i>Dilindungi
                                                 </span>
                                             @endif

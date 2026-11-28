@@ -15,11 +15,6 @@ class UserSeeder extends Seeder
     {
         $users = [
             [
-                'name' => 'Superadmin Perpus',
-                'email' => 'superadmin@perpus.com',
-                'role' => Role::Superadmin->value,
-            ],
-            [
                 'name' => 'Admin Perpustakaan',
                 'email' => 'admin@perpus.com',
                 'role' => Role::Admin->value,

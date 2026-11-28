@@ -7,15 +7,17 @@ use App\Models\Category;
 use App\Models\Member;
 use App\Models\User;
 
-it('merender dashboard untuk petugas tanpa kartu statistik anggota', function () {
+it('merender dashboard untuk petugas dengan 4 statistik wajib', function () {
     $petugas = User::factory()->petugas()->create();
     Member::factory()->create(['name' => 'Budi Santoso']);
 
     $this->actingAs($petugas)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertDontSee('Total Anggota', false)
-        ->assertDontSee('Budi Santoso', false);
+        ->assertSee('Total Koleksi', false)
+        ->assertSee('Jumlah Stok Buku', false)
+        ->assertSee('Jumlah Member', false)
+        ->assertSee('Buku Dipinjam', false);
 });
 
 it('merender halaman data buku beserta hasil pencarian', function () {
@@ -48,14 +50,14 @@ it('menolak nama kategori yang duplikat', function () {
 });
 
 it('merender form tambah dan edit user', function () {
-    $superadmin = User::factory()->superadmin()->create();
-    $target = User::factory()->anggota()->create();
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->petugas()->create();
 
-    $this->actingAs($superadmin)
+    $this->actingAs($admin)
         ->get(route('users.create'))
         ->assertOk();
 
-    $this->actingAs($superadmin)
+    $this->actingAs($admin)
         ->get(route('users.edit', $target))
         ->assertOk();
 });

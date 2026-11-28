@@ -50,7 +50,6 @@
                     </a>
                 </li>
 
-                @if($user->role->isStaff())
                 <li class="perpus-nav-label">Layanan & Koleksi</li>
 
                 <li class="perpus-nav-item {{ Request::is('categories*') ? 'active' : '' }}">
@@ -94,7 +93,6 @@
                         <span>Laporan & Analitik</span>
                     </a>
                 </li>
-                @endif
 
                 @if($user->role->canManageUsers())
                 <li class="perpus-nav-label">Administrasi</li>
