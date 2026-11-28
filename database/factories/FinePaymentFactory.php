@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\PaymentMethod;
 use App\Models\Borrowing;
 use App\Models\FinePayment;
+use App\Models\Member;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -24,7 +25,7 @@ class FinePaymentFactory extends Factory
 
         return [
             'borrowing_id' => $borrowing,
-            'user_id' => User::factory()->anggota(),
+            'member_id' => Member::factory(),
             'admin_id' => User::factory()->petugas(),
             'amount' => fake()->numberBetween(1000, 50000),
             'method' => PaymentMethod::Cash->value,

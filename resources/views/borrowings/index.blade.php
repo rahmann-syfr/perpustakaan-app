@@ -173,9 +173,9 @@
                                 <tr>
                                     <td class="text-muted">{{ $index + 1 }}</td>
                                     <td>
-                                        <div class="fw-bold text-dark">{{ $row->user->name ?? 'User Terhapus' }}</div>
-                                        @if($row->user)
-                                            <small class="text-muted">{{ $row->user->email }}</small>
+                                        <div class="fw-bold text-dark">{{ $row->member->name ?? 'Anggota Terhapus' }}</div>
+                                        @if($row->member)
+                                            <small class="text-muted">{{ $row->member->email }}</small>
                                         @endif
                                     </td>
                                     <td>
@@ -307,7 +307,7 @@
                         @csrf
                         <div class="modal-body p-4">
                             <p class="mb-3 small text-muted">
-                                Peminjam: <strong class="text-dark">{{ $row->user->name ?? '-' }}</strong><br>
+                                Peminjam: <strong class="text-dark">{{ $row->member->name ?? '-' }}</strong><br>
                                 Buku: <strong class="text-dark">{{ $row->book->title ?? '-' }}</strong><br>
                                 Batas Kembali: <strong class="{{ $row->isOverdue() ? 'text-danger' : 'text-dark' }}">{{ $row->due_date?->format('d M Y') }}</strong>
                             </p>
@@ -354,7 +354,7 @@
                             @csrf
                             <div class="modal-body p-4">
                                 <p class="mb-2 small text-muted">
-                                    Peminjam: <strong class="text-dark">{{ $row->user->name ?? '-' }}</strong><br>
+                                    Peminjam: <strong class="text-dark">{{ $row->member->name ?? '-' }}</strong><br>
                                     Buku: <strong class="text-dark">{{ $row->book->title ?? '-' }}</strong><br>
                                     Batas Kembali Saat Ini: <strong class="text-danger">{{ $row->due_date?->format('d M Y') }}</strong>
                                 </p>

@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\BorrowingStatus;
 use App\Models\Book;
 use App\Models\Borrowing;
+use App\Models\Member;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -23,7 +24,7 @@ class BorrowingFactory extends Factory
         $borrowDate = now()->startOfDay();
 
         return [
-            'user_id' => User::factory()->anggota(),
+            'member_id' => Member::factory(),
             'admin_id' => User::factory()->petugas(),
             'book_id' => Book::factory(),
             'borrow_date' => $borrowDate,

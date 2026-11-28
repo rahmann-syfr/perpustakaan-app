@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\Role;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -48,24 +47,6 @@ class User extends Authenticatable
             'role' => Role::class,
             'birth_date' => 'date',
         ];
-    }
-
-    public function borrowings(): HasMany
-    {
-        return $this->hasMany(Borrowing::class, 'user_id');
-    }
-
-    public function finePayments(): HasMany
-    {
-        return $this->hasMany(FinePayment::class);
-    }
-
-    /**
-     * Peminjaman yang masih aktif milik pengguna ini.
-     */
-    public function activeBorrowings(): HasMany
-    {
-        return $this->hasMany(Borrowing::class, 'user_id')->active();
     }
 
     public function isStaff(): bool

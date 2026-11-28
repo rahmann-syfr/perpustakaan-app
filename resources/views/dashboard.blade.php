@@ -267,7 +267,7 @@
                                             </div>
                                             <small class="text-muted">
                                                 @if($isStaff)
-                                                    {{ $activity->user->name ?? 'Anggota' }} &bull;
+                                                    {{ $activity->member->name ?? 'Anggota' }} &bull;
                                                 @endif
                                                 {{ $activity->created_at->diffForHumans() }}
                                             </small>
@@ -295,7 +295,7 @@
                                 <div>
                                     <div class="fw-semibold">{{ $item->book->title ?? '-' }}</div>
                                     @if($isStaff)
-                                        <small class="text-muted">{{ $item->user->name ?? '-' }}</small>
+                                        <small class="text-muted">{{ $item->member->name ?? '-' }}</small>
                                     @endif
                                     <small class="text-danger d-block">Tenggat {{ $item->due_date?->format('d M Y') }}</small>
                                 </div>
@@ -561,7 +561,7 @@
                             <tr>
                                 <td class="text-muted">{{ $index + 1 }}</td>
                                 <td class="fw-semibold text-dark">{{ $pinjam->book->title ?? 'Buku Dihapus' }}</td>
-                                <td>{{ $pinjam->user->name ?? 'User Dihapus' }}</td>
+                                <td>{{ $pinjam->member->name ?? 'Anggota Dihapus' }}</td>
                                 <td class="text-center">{{ \Carbon\Carbon::parse($pinjam->borrow_date)->format('d M Y') }}</td>
                                 <td class="text-center">
                                     <span class="{{ $isLate ? 'text-danger fw-bold' : '' }}">
@@ -628,7 +628,7 @@
                             <tr>
                                 <td class="text-muted">{{ $index + 1 }}</td>
                                 <td class="fw-semibold text-dark">{{ $denda->book->title ?? 'Buku Dihapus' }}</td>
-                                <td>{{ $denda->user->name ?? 'User Dihapus' }}</td>
+                                <td>{{ $denda->member->name ?? 'Anggota Dihapus' }}</td>
                                 <td class="text-center">
                                     @if($denda->status === \App\Enums\BorrowingStatus::Returned)
                                         <span class="badge bg-light-success text-success">Dikembalikan</span>

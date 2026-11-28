@@ -22,7 +22,7 @@
                     <div class="row g-3 small">
                         <div class="col-sm-6">
                             <span class="text-muted d-block">Peminjam</span>
-                            <strong class="text-dark">{{ $borrowing->user?->name ?? '-' }}</strong>
+                            <strong class="text-dark">{{ $borrowing->member?->name ?? '-' }}</strong>
                         </div>
                         <div class="col-sm-6">
                             <span class="text-muted d-block">Judul Buku</span>

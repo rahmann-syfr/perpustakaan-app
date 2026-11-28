@@ -23,21 +23,21 @@
                     <div class="row g-3">
                         <!-- Pilih Anggota -->
                         <div class="col-12">
-                            <label for="user_id" class="form-label fw-semibold">
+                            <label for="member_id" class="form-label fw-semibold">
                                 Anggota Peminjam <span class="text-danger">*</span>
                             </label>
-                            <select id="user_id"
-                                    name="user_id"
-                                    class="form-select @error('user_id') is-invalid @enderror"
+                            <select id="member_id"
+                                    name="member_id"
+                                    class="form-select @error('member_id') is-invalid @enderror"
                                     required>
                                 <option value="">-- Pilih Anggota Peminjam --</option>
                                 @foreach($members as $member)
-                                    <option value="{{ $member->id }}" {{ old('user_id') == $member->id ? 'selected' : '' }}>
+                                    <option value="{{ $member->id }}" {{ old('member_id') == $member->id ? 'selected' : '' }}>
                                         {{ $member->name }} ({{ $member->email }})
                                     </option>
                                 @endforeach
                             </select>
-                            @error('user_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            @error('member_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
                         <!-- Pilih Buku -->

@@ -57,7 +57,7 @@ class PayFine
 
             return FinePayment::create([
                 'borrowing_id' => $borrowing->id,
-                'user_id' => $borrowing->user_id,
+                'member_id' => $borrowing->member_id,
                 'admin_id' => $adminId,
                 'amount' => $amount,
                 'method' => $method->value,

@@ -29,11 +29,6 @@ class UserSeeder extends Seeder
                 'email' => 'petugas@perpus.com',
                 'role' => Role::Petugas->value,
             ],
-            [
-                'name' => 'Anggota Perpustakaan',
-                'email' => 'anggota@perpus.com',
-                'role' => Role::Anggota->value,
-            ],
         ];
 
         foreach ($users as $user) {

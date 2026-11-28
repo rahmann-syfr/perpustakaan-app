@@ -14,7 +14,7 @@ it('petugas dapat memperpanjang masa peminjaman', function () {
     ]);
 
     $this->actingAs($petugas)
-        ->post(route('borrowings.extend', $borrowing))
+        ->post(route('borrowings.extend', $borrowing), ['days' => 7])
         ->assertRedirect(route('borrowings.index'));
 
     $borrowing->refresh();
@@ -28,7 +28,7 @@ it('menolak perpanjangan untuk peminjaman yang sudah terlambat', function () {
     $borrowing = Borrowing::factory()->overdue(3)->create(['extension_count' => 0]);
 
     $this->actingAs($petugas)
-        ->post(route('borrowings.extend', $borrowing))
+        ->post(route('borrowings.extend', $borrowing), ['days' => 7])
         ->assertSessionHasErrors('status');
 
     expect($borrowing->refresh()->extension_count)->toBe(0);
@@ -44,7 +44,7 @@ it('menolak perpanjangan melebihi batas maksimum', function () {
     ]);
 
     $this->actingAs($petugas)
-        ->post(route('borrowings.extend', $borrowing))
+        ->post(route('borrowings.extend', $borrowing), ['days' => 7])
         ->assertSessionHasErrors('status');
 
     SystemSetting::flush();
@@ -52,7 +52,7 @@ it('menolak perpanjangan melebihi batas maksimum', function () {
 
 it('anggota tidak dapat memperpanjang peminjaman sendiri', function () {
     $anggota = User::factory()->anggota()->create();
-    $borrowing = Borrowing::factory()->create(['user_id' => $anggota->id]);
+    $borrowing = Borrowing::factory()->create();
 
     // Middleware role mengarahkan anggota kembali ke dashboard.
     $this->actingAs($anggota)

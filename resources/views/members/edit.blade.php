@@ -31,12 +31,6 @@
                             <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $member->email) }}" required>
                             @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
-                        <div class="col-12">
-                            <label class="form-label fw-semibold">Password Baru</label>
-                            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Kosongkan jika tidak diubah">
-                            <small class="text-muted">Biarkan kosong jika password tidak ingin diganti.</small>
-                            @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                         <a href="{{ route('members.show', $member->id) }}" class="btn btn-light-secondary">Batal</a>

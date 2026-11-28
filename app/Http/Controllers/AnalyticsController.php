@@ -6,7 +6,7 @@ use App\Enums\BorrowingStatus;
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
-use App\Models\User;
+use App\Models\Member;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -142,8 +142,7 @@ class AnalyticsController extends Controller
      */
     private function topBorrowingMembers(): Collection
     {
-        return User::query()
-            ->where('role', 'anggota')
+        return Member::query()
             ->withCount('borrowings')
             ->has('borrowings')
             ->orderByDesc('borrowings_count')
@@ -175,7 +174,7 @@ class AnalyticsController extends Controller
             'average_fine' => $averageFine,
             'active_borrowings' => Borrowing::query()->active()->count(),
             'total_books' => Book::query()->count(),
-            'total_members' => User::query()->where('role', 'anggota')->count(),
+            'total_members' => Member::query()->count(),
         ];
     }
 }

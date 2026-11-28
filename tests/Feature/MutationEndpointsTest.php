@@ -33,7 +33,6 @@ it('menolak anggota yang mencoba memperpanjang atau mengembalikan lewat endpoint
     $anggota = User::factory()->anggota()->create();
     $book = Book::factory()->create();
     $borrowing = Borrowing::factory()->create([
-        'user_id' => $anggota->id,
         'book_id' => $book->id,
     ]);
 
@@ -106,12 +105,10 @@ it('menyimpan anggota baru dengan data valid', function () {
         ->post(route('members.store'), [
             'name' => 'Anggota Uji',
             'email' => 'anggota.uji@perpus.test',
-            'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
         ])
         ->assertRedirect(route('members.index'));
 
-    $this->assertDatabaseHas('users', ['email' => 'anggota.uji@perpus.test']);
+    $this->assertDatabaseHas('members', ['email' => 'anggota.uji@perpus.test']);
 });
 
 it('menyimpan kategori baru dan menolak duplikat nama', function () {

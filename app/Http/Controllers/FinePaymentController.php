@@ -18,7 +18,7 @@ class FinePaymentController extends Controller
     public function index(Request $request): View
     {
         $payments = FinePayment::query()
-            ->with(['user', 'admin', 'borrowing.book'])
+            ->with(['member', 'admin', 'borrowing.book'])
             ->when($request->filled('method'), fn ($query) => $query->where('method', $request->string('method')->toString()))
             ->latest()
             ->paginate(15)
@@ -43,7 +43,7 @@ class FinePaymentController extends Controller
         abort_unless($borrowing->hasOutstandingFine(), 404);
 
         return view('fines.create', [
-            'borrowing' => $borrowing->load(['user', 'book']),
+            'borrowing' => $borrowing->load(['member', 'book']),
             'outstanding' => $borrowing->outstandingFine(),
             'methods' => PaymentMethod::cases(),
         ]);

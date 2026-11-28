@@ -3,6 +3,7 @@
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
+use App\Models\Member;
 use App\Models\User;
 
 /**
@@ -16,16 +17,17 @@ function seedPerpusData(): array
     $category = Category::factory()->create();
     $book = Book::factory()->create(['category_id' => $category->id]);
     $bookLain = Book::factory()->create(['category_id' => $category->id]);
-    $anggota = User::factory()->anggota()->create();
+    $anggota = Member::factory()->create();
+    $targetUser = User::factory()->petugas()->create();
 
-    Borrowing::factory()->create(['user_id' => $anggota->id, 'book_id' => $book->id]);
+    Borrowing::factory()->create(['member_id' => $anggota->id, 'book_id' => $book->id]);
     Borrowing::factory()->overdue(5)->create([
-        'user_id' => $anggota->id,
+        'member_id' => $anggota->id,
         'book_id' => $book->id,
         'admin_id' => null,
     ]);
     Borrowing::factory()->returned()->create([
-        'user_id' => $anggota->id,
+        'member_id' => $anggota->id,
         'book_id' => $book->id,
         'admin_id' => null,
     ]);
@@ -35,6 +37,7 @@ function seedPerpusData(): array
         'book' => $book,
         'bookLain' => $bookLain,
         'anggota' => $anggota,
+        'targetUser' => $targetUser,
     ];
 }
 
@@ -89,7 +92,7 @@ function parameterRoute(array $kunci, array $data, array $query = []): array
     foreach ($kunci as $key) {
         $parameter[$key] = match ($key) {
             'id' => $data['anggota']->id,
-            'user' => $data['anggota'],
+            'user' => $data['targetUser'],
             default => $data[$key],
         };
     }
@@ -110,15 +113,15 @@ function datasetHalaman(): array
 
 it('merender daftar anggota dengan filter terlambat tanpa error', function () {
     $petugas = User::factory()->petugas()->create();
-    $terlambat = User::factory()->anggota()->create(['name' => 'Anggota Terlambat']);
-    $normal = User::factory()->anggota()->create(['name' => 'Anggota Normal']);
+    $terlambat = Member::factory()->create(['name' => 'Anggota Terlambat']);
+    $normal = Member::factory()->create(['name' => 'Anggota Normal']);
 
     Borrowing::factory()->overdue(5)->create([
-        'user_id' => $terlambat->id,
+        'member_id' => $terlambat->id,
         'admin_id' => null,
     ]);
     Borrowing::factory()->create([
-        'user_id' => $normal->id,
+        'member_id' => $normal->id,
         'admin_id' => null,
         'due_date' => now()->startOfDay()->addDays(5),
     ]);
@@ -133,10 +136,10 @@ it('merender daftar anggota dengan filter terlambat tanpa error', function () {
 
 it('merender daftar anggota dengan filter tidak meminjam tanpa error', function () {
     $petugas = User::factory()->petugas()->create();
-    $aktif = User::factory()->anggota()->create(['name' => 'Anggota Aktif']);
-    $nonaktif = User::factory()->anggota()->create(['name' => 'Anggota Nonaktif']);
+    $aktif = Member::factory()->create(['name' => 'Anggota Aktif']);
+    $nonaktif = Member::factory()->create(['name' => 'Anggota Nonaktif']);
 
-    Borrowing::factory()->create(['user_id' => $aktif->id, 'admin_id' => null]);
+    Borrowing::factory()->create(['member_id' => $aktif->id, 'admin_id' => null]);
 
     $response = $this->actingAs($petugas)
         ->get(route('members.index', ['status' => 'nonaktif']));
@@ -148,11 +151,11 @@ it('merender daftar anggota dengan filter tidak meminjam tanpa error', function 
 
 it('merender daftar anggota dengan pencarian nama dan email', function () {
     $petugas = User::factory()->petugas()->create();
-    User::factory()->anggota()->create([
+    Member::factory()->create([
         'name' => 'Cahyani Hamzah',
         'email' => 'cahyani@perpus.test',
     ]);
-    User::factory()->anggota()->create([
+    Member::factory()->create([
         'name' => 'Budi Santoso',
         'email' => 'budi@perpus.test',
     ]);
@@ -200,7 +203,7 @@ it('merender profil pengguna tanpa error', function () {
 
 it('menyediakan kolom pencarian dan empty state pada halaman data', function (string $role, string $route) {
     $petugas = User::factory()->{$role}()->create();
-    User::factory()->anggota()->create(['name' => 'Anggota searchable']);
+    Member::factory()->create(['name' => 'Anggota searchable']);
 
     $response = $this->actingAs($petugas)->get(route($route));
 

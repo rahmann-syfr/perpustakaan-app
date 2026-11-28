@@ -19,7 +19,7 @@ class Borrowing extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'user_id',
+        'member_id',
         'admin_id',
         'book_id',
         'borrow_date',
@@ -51,9 +51,9 @@ class Borrowing extends Model
         ];
     }
 
-    public function user(): BelongsTo
+    public function member(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(Member::class, 'member_id');
     }
 
     public function admin(): BelongsTo

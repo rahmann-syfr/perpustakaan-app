@@ -18,7 +18,7 @@ class FinePayment extends Model
      */
     protected $fillable = [
         'borrowing_id',
-        'user_id',
+        'member_id',
         'admin_id',
         'amount',
         'method',
@@ -42,9 +42,9 @@ class FinePayment extends Model
         return $this->belongsTo(Borrowing::class);
     }
 
-    public function user(): BelongsTo
+    public function member(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Member::class, 'member_id');
     }
 
     public function admin(): BelongsTo

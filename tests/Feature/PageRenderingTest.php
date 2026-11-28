@@ -4,24 +4,12 @@ use App\Enums\BorrowingStatus;
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
+use App\Models\Member;
 use App\Models\User;
-
-it('merender dashboard untuk anggota tanpa membocorkan daftar anggota lain', function () {
-    $anggota = User::factory()->anggota()->create();
-    $anggotaLain = User::factory()->anggota()->create(['name' => 'Rahasia Member']);
-
-    Borrowing::factory()->create(['user_id' => $anggota->id]);
-    Borrowing::factory()->create(['user_id' => $anggotaLain->id]);
-
-    $this->actingAs($anggota)
-        ->get(route('dashboard'))
-        ->assertOk()
-        ->assertDontSee('Rahasia Member');
-});
 
 it('merender dashboard untuk petugas tanpa kartu statistik anggota', function () {
     $petugas = User::factory()->petugas()->create();
-    User::factory()->anggota()->create(['name' => 'Budi Santoso']);
+    Member::factory()->create(['name' => 'Budi Santoso']);
 
     $this->actingAs($petugas)
         ->get(route('dashboard'))

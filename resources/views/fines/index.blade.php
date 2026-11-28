@@ -68,8 +68,8 @@
                         <tr>
                             <td class="text-muted">{{ $index + 1 }}</td>
                             <td>
-                                <div class="fw-semibold text-dark">{{ $payment->user->name ?? 'Anggota Terhapus' }}</div>
-                                <small class="text-muted">{{ $payment->user->email ?? '-' }}</small>
+                                <div class="fw-semibold text-dark">{{ $payment->member->name ?? 'Anggota Terhapus' }}</div>
+                                <small class="text-muted">{{ $payment->member->email ?? '-' }}</small>
                             </td>
                             <td>
                                 <div class="fw-semibold text-dark">{{ $payment->borrowing?->book?->title ?? 'Buku Terhapus' }}</div>
