@@ -1,13 +1,192 @@
 @import 'tailwindcss';
-@import './perpus-theme.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../views/**/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-    --color-perpus: #0d9488;
-    --color-perpus-dark: #0f766e;
+    /* Colors from DESIGN.md & Stitch tailwind-config */
+    --color-surface: #fcf8f8;
+    --color-surface-dim: #dcd9d9;
+    --color-surface-bright: #fcf8f8;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #f6f3f2;
+    --color-surface-container: #f0edec;
+    --color-surface-container-high: #ebe7e7;
+    --color-surface-container-highest: #e5e2e1;
+    --color-surface-variant: #e5e2e1;
+    --color-on-surface: #1c1b1b;
+    --color-on-surface-variant: #4f4633;
+    --color-inverse-surface: #313030;
+    --color-inverse-on-surface: #f3f0ef;
+    --color-outline: #817661;
+    --color-outline-variant: #d2c5ad;
+    --color-surface-tint: #775a00;
+    --color-background: #fcf8f8;
+    --color-on-background: #1c1b1b;
+
+    --color-primary: #775a00;
+    --color-on-primary: #ffffff;
+    --color-primary-container: #f9c32e;
+    --color-on-primary-container: #6c5100;
+    --color-inverse-primary: #f4bf29;
+    --color-primary-fixed: #ffdf99;
+    --color-primary-fixed-dim: #f4bf29;
+    --color-on-primary-fixed: #251a00;
+    --color-on-primary-fixed-variant: #5a4300;
+
+    --color-secondary: #3b6750;
+    --color-on-secondary: #ffffff;
+    --color-secondary-container: #bdeed0;
+    --color-on-secondary-container: #416d56;
+    --color-secondary-fixed: #bdeed0;
+    --color-secondary-fixed-dim: #a2d1b5;
+    --color-on-secondary-fixed: #002113;
+    --color-on-secondary-fixed-variant: #234f39;
+
+    --color-tertiary: #6733ea;
+    --color-on-tertiary: #ffffff;
+    --color-tertiary-container: #d1c2ff;
+    --color-on-tertiary-container: #5d25e1;
+    --color-tertiary-fixed: #e7deff;
+    --color-tertiary-fixed-dim: #cdbdff;
+    --color-on-tertiary-fixed: #1f005f;
+    --color-on-tertiary-fixed-variant: #4e00d1;
+
+    --color-error: #ba1a1a;
+    --color-on-error: #ffffff;
+    --color-error-container: #ffdad6;
+    --color-on-error-container: #93000a;
+
+    /* Neo-Brutalist Semantic Palette */
+    --color-neo-ink: #0a0a0a;
+    --color-neo-paper: #fff6e0;
+    --color-neo-yellow: #f9c32e;
+    --color-neo-mint: #a9d9bc;
+    --color-neo-pink: #ff7a9c;
+    --color-neo-lime: #c4f04d;
+    --color-neo-violet: #7b4dff;
+    --color-neo-sky: #4fa8ff;
+    --color-neo-orange: #ff8a5b;
+    --color-neo-lilac: #f3b6f5;
+
+    /* Font Families */
+    --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, monospace;
+    --font-display-lg: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-display-md: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-headline-lg: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-headline-md: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-headline-sm: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-body-lg: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-body-md: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-body-sm: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-label-lg: 'Space Mono', ui-monospace, monospace;
+    --font-label-md: 'Space Mono', ui-monospace, monospace;
+    --font-label-sm: 'Space Mono', ui-monospace, monospace;
+
+    /* Typography Sizes + Line Heights + Letter Spacing */
+    --text-display-lg: 48px;
+    --text-display-lg--line-height: 54px;
+    --text-display-lg--letter-spacing: -0.03em;
+
+    --text-display-md: 36px;
+    --text-display-md--line-height: 42px;
+    --text-display-md--letter-spacing: -0.02em;
+
+    --text-headline-lg: 28px;
+    --text-headline-lg--line-height: 34px;
+    --text-headline-lg--letter-spacing: -0.02em;
+
+    --text-headline-md: 22px;
+    --text-headline-md--line-height: 28px;
+    --text-headline-md--letter-spacing: -0.01em;
+
+    --text-headline-sm: 18px;
+    --text-headline-sm--line-height: 24px;
+    --text-headline-sm--letter-spacing: 0em;
+
+    --text-body-lg: 16px;
+    --text-body-lg--line-height: 24px;
+
+    --text-body-md: 14px;
+    --text-body-md--line-height: 20px;
+
+    --text-body-sm: 12px;
+    --text-body-sm--line-height: 18px;
+
+    --text-label-lg: 14px;
+    --text-label-lg--line-height: 18px;
+    --text-label-lg--letter-spacing: 0.04em;
+
+    --text-label-md: 12px;
+    --text-label-md--line-height: 16px;
+    --text-label-md--letter-spacing: 0.04em;
+
+    --text-label-sm: 10px;
+    --text-label-sm--line-height: 14px;
+    --text-label-sm--letter-spacing: 0.04em;
+
+    /* Spacing */
+    --spacing-gutter: 1.5rem;
+    --spacing-margin: 2rem;
+    --spacing-space-xs: 0.25rem;
+    --spacing-space-sm: 0.5rem;
+    --spacing-space-md: 1rem;
+    --spacing-space-lg: 1.5rem;
+    --spacing-space-xl: 2.5rem;
+}
+
+@layer base {
+    :root {
+        color-scheme: light;
+    }
+
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        color-scheme: light;
+    }
+
+    body {
+        overscroll-behavior: none;
+        background-color: #fff6e0;
+        color: #0a0a0a;
+        font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    }
+}
+
+.bg-grid-paper {
+    background-color: #fff6e0;
+    background-image:
+        linear-gradient(to right, rgba(10, 10, 10, 0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(10, 10, 10, 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+.neo-shadow-sm {
+    box-shadow: 2px 2px 0px #0a0a0a;
+}
+
+.neo-shadow-md {
+    box-shadow: 4px 4px 0px #0a0a0a;
+}
+
+.neo-shadow-lg {
+    box-shadow: 6px 6px 0px #0a0a0a;
+}
+
+.neo-shadow-xl {
+    box-shadow: 10px 10px 0px #0a0a0a;
+}
+
+.neo-shadow-hover:hover {
+    box-shadow: 4px 4px 0px #0a0a0a;
+    transform: translate(-2px, -2px);
+}
+
+.neo-shadow-active:active {
+    box-shadow: 0px 0px 0px #0a0a0a;
+    transform: translate(2px, 2px);
 }
