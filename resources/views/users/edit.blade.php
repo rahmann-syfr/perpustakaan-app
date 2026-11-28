@@ -4,96 +4,81 @@
 @section('page-title', 'Edit Data Pengguna')
 
 @section('content')
-<div class="row justify-content-center">
-    <div class="col-12 col-md-8 col-lg-6">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center border-bottom pb-3">
-                <div>
-                    <h4 class="card-title mb-1">Form Edit User</h4>
-                    <p class="text-muted small mb-0">Perbarui profil atau hak akses untuk <strong>{{ $user->name }}</strong>.</p>
-                </div>
-                <a href="{{ route('users.index') }}" class="btn btn-light-secondary btn-sm">
-                    <i class="bi bi-arrow-left me-1"></i> Kembali
-                </a>
+<div class="max-w-2xl mx-auto">
+    <x-ui.card :window="true" title="users.edit" bodyClass="p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 mb-6 border-b-[3px] border-[#0A0A0A]">
+            <div>
+                <h2 class="font-headline-md text-[22px] font-extrabold text-[#0A0A0A] m-0">Form Edit User</h2>
+                <p class="font-sans text-[14px] text-[#4f4633] mt-1 mb-0">
+                    Perbarui profil atau hak akses untuk <strong>{{ $user->name }}</strong>.
+                </p>
             </div>
-
-            <div class="card-body pt-4">
-                <form action="{{ route('users.update', $user) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
-                        <input type="text"
-                               name="name"
-                               class="form-control @error('name') is-invalid @enderror"
-                               value="{{ old('name', $user->name) }}"
-                               required>
-                        @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Alamat Email <span class="text-danger">*</span></label>
-                        <input type="email"
-                               name="email"
-                               class="form-control @error('email') is-invalid @enderror"
-                               value="{{ old('email', $user->email) }}"
-                               required>
-                        @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Password Baru (Opsional)</label>
-                        <div class="input-group">
-                            <input type="password"
-                                   id="passwordEditInput"
-                                   name="password"
-                                   class="form-control @error('password') is-invalid @enderror"
-                                   placeholder="Kosongkan jika tidak ingin mengubah password">
-                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="passwordEditInput" title="Lihat/Sembunyikan Password">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Role / Hak Akses <span class="text-danger">*</span></label>
-                        <select name="role" class="form-select @error('role') is-invalid @enderror" required>
-                            @foreach($assignableRoles as $assignableRole)
-                                <option value="{{ $assignableRole }}" {{ (old('role') ?? $user->role->value) == $assignableRole ? 'selected' : '' }}>
-                                    {{ \App\Enums\Role::from($assignableRole)->label() }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('role')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                        <a href="{{ route('users.index') }}" class="btn btn-light-secondary">Batal</a>
-                        <button type="submit" class="btn btn-warning fw-semibold">
-                            <i class="bi bi-save me-1"></i> Perbarui User
-                        </button>
-                    </div>
-                </form>
-            </div>
+            <x-ui.button variant="secondary" size="sm" icon="arrow_back" href="{{ route('users.index') }}">
+                Kembali
+            </x-ui.button>
         </div>
-    </div>
+
+        <form action="{{ route('users.update', $user) }}" method="POST" class="space-y-5">
+            @csrf
+            @method('PUT')
+
+            <x-ui.input name="name" label="Nama Lengkap" :value="$user->name" :required="true" />
+
+            <x-ui.input name="email" type="email" label="Alamat Email" :value="$user->email" :required="true" />
+
+            <div class="space-y-1.5">
+                <label for="passwordEditInput" class="font-mono text-[12px] font-bold uppercase tracking-[0.04em] text-[#0A0A0A] block">
+                    Password Baru (Opsional)
+                </label>
+                <div class="flex w-full">
+                    <input
+                        type="password"
+                        id="passwordEditInput"
+                        name="password"
+                        placeholder="Kosongkan jika tidak ingin mengubah password"
+                        class="w-full bg-white text-[#0A0A0A] font-sans text-[15px] font-medium px-4 py-3 border-[3px] border-r-0 {{ $errors->has('password') ? 'border-[#FF7A9C]' : 'border-[#0A0A0A]' }} neo-shadow-md focus:outline-none focus:border-[#7B4DFF]"
+                    />
+                    <button
+                        type="button"
+                        data-toggle-password="passwordEditInput"
+                        aria-label="Lihat atau sembunyikan password"
+                        class="w-12 shrink-0 bg-white text-[#0A0A0A] border-[3px] border-[#0A0A0A] neo-shadow-md flex items-center justify-center hover:bg-[#F9C32E] cursor-pointer"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">visibility</span>
+                    </button>
+                </div>
+                @error('password')
+                    <p class="font-mono text-[11px] font-bold text-[#93000a] bg-[#ffdad6] border-[2px] border-[#0A0A0A] px-2.5 py-1 m-0">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <x-ui.input name="role" type="select" label="Role / Hak Akses" :required="true">
+                @foreach ($assignableRoles as $assignableRole)
+                    <option value="{{ $assignableRole }}" {{ (old('role') ?? $user->role->value) == $assignableRole ? 'selected' : '' }}>
+                        {{ \App\Enums\Role::from($assignableRole)->label() }}
+                    </option>
+                @endforeach
+            </x-ui.input>
+
+            <div class="flex items-center justify-end gap-3 pt-4 border-t-[3px] border-[#0A0A0A]">
+                <x-ui.button variant="secondary" href="{{ route('users.index') }}">Batal</x-ui.button>
+                <x-ui.button type="submit" variant="primary" icon="save">Perbarui User</x-ui.button>
+            </div>
+        </form>
+    </x-ui.card>
 </div>
 @endsection
 
 @push('scripts')
 <script>
-    document.querySelectorAll('.toggle-password').forEach(btn => {
+    document.querySelectorAll('[data-toggle-password]').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            const input = document.getElementById(this.dataset.target);
-            const icon = this.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.replace('bi-eye', 'bi-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.replace('bi-eye-slash', 'bi-eye');
-            }
+            const input = document.getElementById(btn.getAttribute('data-toggle-password'));
+            const icon = btn.querySelector('.material-symbols-outlined');
+            if (!input || !icon) return;
+            const isPass = input.type === 'password';
+            input.type = isPass ? 'text' : 'password';
+            icon.textContent = isPass ? 'visibility_off' : 'visibility';
         });
     });
 </script>

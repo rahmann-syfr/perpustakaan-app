@@ -4,164 +4,235 @@
 @section('page-title', 'Manajemen Data Buku')
 
 @section('content')
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
-                <div>
-                    <h4 class="card-title mb-1">Daftar Koleksi Buku</h4>
-                    <p class="text-muted small mb-0">Kelola stok, sampul, dan informasi bibliografi koleksi perpustakaan.</p>
-                </div>
-                <a href="{{ route('books.create') }}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-1"></i> Tambah Buku
-                </a>
+@php
+    $totalTitles = \App\Models\Book::count();
+    $totalCopies = (int) \App\Models\Book::sum('total_stock');
+    $availableCopies = (int) \App\Models\Book::sum('available_stock');
+@endphp
+
+<div class="space-y-6">
+    {{-- Header --}}
+    <x-ui.card :window="true" title="books.index" bodyClass="p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="font-headline-md text-[22px] font-extrabold text-[#0A0A0A] m-0">Daftar Koleksi Buku</h2>
+                <p class="font-sans text-[14px] text-[#4f4633] mt-1 mb-0">
+                    Kelola stok, sampul, dan informasi bibliografi koleksi perpustakaan.
+                </p>
+            </div>
+            <x-ui.button variant="primary" icon="add" href="{{ route('books.create') }}">
+                Tambah Buku
+            </x-ui.button>
+        </div>
+    </x-ui.card>
+
+    {{-- 3 Kartu Ringkasan dari DB --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <x-ui.stat-card
+            color="yellow"
+            icon="menu_book"
+            badge="Judul"
+            label="Total Judul Buku"
+            :value="number_format($totalTitles, 0, ',', '.')"
+        />
+        <x-ui.stat-card
+            color="mint"
+            icon="inventory_2"
+            badge="Total"
+            label="Total Eksemplar"
+            :value="number_format($totalCopies, 0, ',', '.')"
+        />
+        <x-ui.stat-card
+            color="sky"
+            icon="check_circle"
+            badge="Siap Pinjam"
+            label="Stok Tersedia"
+            :value="number_format($availableCopies, 0, ',', '.')"
+        />
+    </div>
+
+    {{-- Pencarian & Filter --}}
+    <form action="{{ route('books.index') }}" method="GET" class="bg-white border-[3px] border-[#0A0A0A] neo-shadow-md p-4">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+            <div class="md:col-span-5">
+                <x-ui.input
+                    name="search"
+                    id="tableSearch"
+                    label="Pencarian"
+                    :value="request('search')"
+                    placeholder="Cari judul, penulis, atau ISBN..."
+                />
             </div>
 
-            <div class="card-body">
-                <form action="{{ route('books.index') }}" method="GET" class="row g-2 mb-3 align-items-center">
-                    <div class="col-12 col-md-5">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" id="tableSearch" name="search" class="form-control border-start-0"
-                                   value="{{ request('search') }}"
-                                   placeholder="Cari judul, penulis, atau ISBN..." autocomplete="off">
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-4">
-                        <select class="form-select" name="category" onchange="this.form.submit()">
-                            <option value="">Semua Kategori</option>
-                            @foreach($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ (string) request('category') === (string) $cat->id ? 'selected' : '' }}>
-                                    {{ $cat->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3 d-flex align-items-center gap-2">
-                        <button type="submit" class="btn btn-primary flex-grow-1">
-                            <i class="bi bi-search me-1"></i> Cari
-                        </button>
-                        @if(request('search') || request('category'))
-                            <a href="{{ route('books.index') }}" class="btn btn-light-secondary" data-bs-toggle="tooltip" title="Reset Filter">
-                                <i class="bi bi-arrow-counterclockwise"></i>
-                            </a>
-                        @endif
-                    </div>
-                </form>
+            <div class="md:col-span-3">
+                <x-ui.input name="category" id="bookCategoryFilter" type="select" label="Kategori" onchange="this.form.submit()">
+                    <option value="">Semua Kategori</option>
+                    @foreach ($categories as $cat)
+                        <option value="{{ $cat->id }}" {{ (string) request('category') === (string) $cat->id ? 'selected' : '' }}>
+                            {{ $cat->name }}
+                        </option>
+                    @endforeach
+                </x-ui.input>
+            </div>
 
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle" id="table1">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 65px;">Sampul</th>
-                                <th>Judul & Penulis</th>
-                                <th>Kategori</th>
-                                <th class="text-center">Tahun</th>
-                                <th class="text-center">Stok Total</th>
-                                <th class="text-center">Stok Tersedia</th>
-                                <th class="text-center" style="width: 120px;">Aksi</th>
-                            </tr>
-                        </thead>
-                            <tbody>
-                                @foreach ($books as $book)
-                                    <tr>
-                                        <td>
-                                            @if($book->cover_image)
-                                                <img src="{{ asset('storage/' . $book->cover_image) }}"
-                                                     alt="Sampul {{ $book->title }}"
-                                                     class="rounded shadow-sm"
-                                                     width="44"
-                                                     height="62"
-                                                     style="object-fit: cover;">
-                                            @else
-                                                <div class="bg-light border rounded d-flex justify-content-center align-items-center text-secondary" style="width: 44px; height: 62px;">
-                                                    <i class="bi bi-journal-richtext fs-5 opacity-50"></i>
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <div class="fw-bold text-dark">{{ $book->title }}</div>
-                                            <small class="text-muted">
-                                                <i class="bi bi-person me-1"></i>{{ $book->author }}
-                                                @if($book->isbn)
-                                                    &bull; ISBN: {{ $book->isbn }}
-                                                @endif
-                                            </small>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-light-primary text-primary fw-semibold">
-                                                {{ $book->category->name ?? '-' }}
-                                            </span>
-                                        </td>
-                                        <td class="text-center">{{ $book->published_year }}</td>
-                                        <td class="text-center">
-                                            <span class="badge bg-light-secondary text-dark">{{ $book->total_stock }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                            @if($book->available_stock > 0)
-                                                <span class="badge bg-light-success text-success fw-semibold">
-                                                    {{ $book->available_stock }} Tersedia
-                                                </span>
-                                            @else
-                                                <span class="badge bg-light-danger text-danger fw-semibold">Habis</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="table-action-buttons justify-content-center">
-                                                <a href="{{ route('books.edit', $book) }}"
-                                                   class="btn btn-sm btn-light-warning text-warning"
-                                                   data-bs-toggle="tooltip"
-                                                   title="Edit Buku">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </a>
-                                                <form action="{{ route('books.destroy', $book) }}" method="POST" class="form-delete">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                            class="btn btn-sm btn-light-danger text-danger"
-                                                            data-bs-toggle="tooltip"
-                                                            title="Hapus Buku">
-                                                        <i class="bi bi-trash-fill"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
+            <div class="md:col-span-2">
+                <x-ui.input name="stock_filter" id="bookStockFilter" type="select" label="Status Stok">
+                    <option value="">Semua Stok</option>
+                    <option value="available">Tersedia</option>
+                    <option value="empty">Habis</option>
+                </x-ui.input>
+            </div>
 
-                                @if($books->isEmpty())
-                                    @include('partials.empty-row', [
-                                        'colspan' => 7,
-                                        'icon' => 'bi-book',
-                                        'title' => 'Belum Ada Koleksi Buku',
-                                        'text' => 'Mulai tambahkan data buku baru ke dalam sistem perpustakaan.',
-                                        'actionUrl' => route('books.create'),
-                                        'actionLabel' => 'Tambah Buku Pertama',
-                                        'actionIcon' => 'bi-plus-circle',
-                                    ])
-                                @endif
-                            </tbody>
-                        </table>
-
-                        <div class="perpus-table-empty" id="tableEmpty" hidden>
-                            <i class="bi bi-search"></i>
-                            <p class="mb-0 fw-semibold">Buku tidak ditemukan</p>
-                            <small>Coba ubah kata kunci pencarian Anda.</small>
-                        </div>
-                    </div>
-
-                    @if($books->hasPages())
-                        <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                            {{ $books->links() }}
-                            <span class="perpus-table-counter small">
-                                Menampilkan {{ $books->firstItem() ?? 0 }}-{{ $books->lastItem() ?? 0 }} dari {{ $books->total() }} buku
-                            </span>
-                        </div>
-                    @endif
+            <div class="md:col-span-2 flex items-center gap-2">
+                <x-ui.button type="submit" variant="primary" size="md" icon="search" class="w-full">
+                    Cari
+                </x-ui.button>
+                @if (request('search') || request('category'))
+                    <x-ui.button variant="secondary" size="md" href="{{ route('books.index') }}" title="Reset Filter">
+                        Reset
+                    </x-ui.button>
+                @endif
             </div>
         </div>
-    </div>
+    </form>
+
+    {{-- Tabel Buku --}}
+    @if ($books->isNotEmpty())
+        <x-ui.table :headers="['Sampul', 'Judul & Penulis', 'Kategori', 'Tahun', 'Stok Total', 'Status Stok', 'Aksi']" id="booksTable">
+            @foreach ($books as $book)
+                @php
+                    $stockStatus = $book->available_stock > 0 ? 'available' : 'empty';
+                @endphp
+                <tr data-book-row data-stock="{{ $stockStatus }}">
+                    <td class="w-20">
+                        @if ($book->cover_image)
+                            <img
+                                src="{{ asset('storage/' . $book->cover_image) }}"
+                                alt="Sampul {{ $book->title }}"
+                                class="w-12 h-16 object-cover border-[3px] border-[#0A0A0A] neo-shadow-sm"
+                            />
+                        @else
+                            <div class="w-12 h-16 bg-[#FFF6E0] border-[3px] border-[#0A0A0A] neo-shadow-sm flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[22px] text-[#0A0A0A]">menu_book</span>
+                            </div>
+                        @endif
+                    </td>
+                    <td>
+                        <a href="{{ route('books.show', $book) }}" class="font-bold text-[#0A0A0A] hover:underline block">
+                            {{ $book->title }}
+                        </a>
+                        <span class="font-sans text-[12px] text-[#4f4633] block mt-0.5">
+                            {{ $book->author }}
+                            @if ($book->isbn)
+                                &bull; <span class="font-mono">ISBN: {{ $book->isbn }}</span>
+                            @endif
+                        </span>
+                    </td>
+                    <td>
+                        <x-ui.badge variant="mint">{{ $book->category->name ?? '-' }}</x-ui.badge>
+                    </td>
+                    <td class="font-mono text-xs">{{ $book->published_year }}</td>
+                    <td class="font-mono text-xs font-bold">{{ $book->total_stock }}</td>
+                    <td>
+                        @if ($book->available_stock > 0)
+                            <x-ui.badge variant="success">{{ $book->available_stock }} Tersedia</x-ui.badge>
+                        @else
+                            <x-ui.badge variant="danger">Habis</x-ui.badge>
+                        @endif
+                    </td>
+                    <td class="w-48">
+                        <div class="flex items-center gap-1.5">
+                            <x-ui.button variant="info" size="sm" href="{{ route('books.show', $book) }}" title="Detail">
+                                Detail
+                            </x-ui.button>
+                            <x-ui.button variant="secondary" size="sm" href="{{ route('books.edit', $book) }}" title="Edit">
+                                Edit
+                            </x-ui.button>
+                            <x-ui.button variant="danger" size="sm" data-modal-open="deleteBookModal{{ $book->id }}" title="Hapus">
+                                Hapus
+                            </x-ui.button>
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
+        </x-ui.table>
+
+        <div id="tableEmpty" class="hidden">
+            <x-ui.empty-state icon="filter_alt_off" title="Tidak Ada Buku yang Cocok" description="Tidak ada buku dengan status stok tersebut pada halaman ini." />
+        </div>
+
+        <x-ui.pagination :paginator="$books" />
+    @else
+        <div id="tableEmpty">
+            <x-ui.empty-state
+                icon="menu_book"
+                title="Belum Ada Koleksi Buku"
+                description="Mulai tambahkan data buku baru atau ubah kata kunci pencarian Anda."
+            >
+                <x-ui.button variant="primary" size="sm" icon="add" href="{{ route('books.create') }}">
+                    Tambah Buku
+                </x-ui.button>
+            </x-ui.empty-state>
+        </div>
+    @endif
 </div>
 @endsection
 
-@include('partials.table-search-script')
+@push('modals')
+    @foreach ($books as $book)
+        @php
+            $activeBorrowCount = $book->activeBorrowings()->count();
+        @endphp
+        <x-ui.modal id="deleteBookModal{{ $book->id }}" title="Hapus Buku">
+            @if ($activeBorrowCount > 0)
+                <x-ui.alert type="error" :dismissible="false" title="Transaksi Aktif">
+                    Buku <strong>{{ $book->title }}</strong> masih memiliki <strong>{{ $activeBorrowCount }} transaksi peminjaman aktif</strong> sehingga tidak dapat dihapus.
+                </x-ui.alert>
+                <x-slot:footer>
+                    <x-ui.button variant="secondary" size="sm" data-modal-close="deleteBookModal{{ $book->id }}">Tutup</x-ui.button>
+                </x-slot:footer>
+            @else
+                <p class="font-sans text-[14px] text-[#0A0A0A] m-0">
+                    Apakah Anda yakin ingin menghapus buku <strong>{{ $book->title }}</strong> beserta sampulnya?
+                </p>
+                <form id="deleteBookForm{{ $book->id }}" action="{{ route('books.destroy', $book) }}" method="POST" class="hidden">
+                    @csrf
+                    @method('DELETE')
+                </form>
+                <x-slot:footer>
+                    <x-ui.button variant="secondary" size="sm" data-modal-close="deleteBookModal{{ $book->id }}">Batal</x-ui.button>
+                    <x-ui.button type="submit" form="deleteBookForm{{ $book->id }}" variant="danger" size="sm" icon="delete">Hapus Buku</x-ui.button>
+                </x-slot:footer>
+            @endif
+        </x-ui.modal>
+    @endforeach
+@endpush
+
+@push('scripts')
+<script>
+    (function () {
+        const stockFilter = document.getElementById('bookStockFilter');
+        const rows = document.querySelectorAll('[data-book-row]');
+        const tableWrap = document.getElementById('booksTable');
+        const emptyBox = document.getElementById('tableEmpty');
+
+        if (!stockFilter || !rows.length) return;
+
+        stockFilter.addEventListener('change', function () {
+            const val = stockFilter.value;
+            let visible = 0;
+
+            rows.forEach(function (row) {
+                const match = !val || row.getAttribute('data-stock') === val;
+                row.classList.toggle('hidden', !match);
+                if (match) visible++;
+            });
+
+            if (tableWrap && emptyBox) {
+                tableWrap.classList.toggle('hidden', visible === 0);
+                emptyBox.classList.toggle('hidden', visible > 0);
+            }
+        });
+    })();
+</script>
+@endpush

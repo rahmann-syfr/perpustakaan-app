@@ -30,7 +30,6 @@ class BorrowingReportCsv
             'Tgl Kembali',
             'Status',
             'Hari Telat',
-            'Denda (Rp)',
         ], ';');
 
         foreach ($borrowings as $index => $row) {
@@ -44,7 +43,6 @@ class BorrowingReportCsv
                 $row->return_date?->format('d-m-Y') ?? '-',
                 $row->status->label(),
                 $row->late_days ?? 0,
-                $row->fine_amount ?? 0,
             ], ';');
         }
 

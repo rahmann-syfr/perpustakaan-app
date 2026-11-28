@@ -90,43 +90,6 @@ window.Perpus = window.Perpus || {};
     };
 
     /* ------------------------------------------------------------------
-     | Tema terang / gelap
-     |------------------------------------------------------------------*/
-    const Theme = {
-        apply(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-
-            const icon = document.getElementById('themeToggleIcon');
-            if (icon) {
-                icon.className = theme === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-stars-fill';
-            }
-
-            const toggle = document.getElementById('themeToggle');
-            if (toggle) {
-                toggle.setAttribute(
-                    'aria-label',
-                    theme === 'dark' ? 'Aktifkan tema terang' : 'Aktifkan tema gelap'
-                );
-            }
-        },
-
-        current() {
-            return document.documentElement.getAttribute('data-theme') || 'light';
-        },
-
-        toggle() {
-            const next = Theme.current() === 'dark' ? 'light' : 'dark';
-            Theme.apply(next);
-            try {
-                localStorage.setItem('perpus-theme', next);
-            } catch (e) { /* mode privat: abaikan */ }
-            Perpus.toast(next === 'dark' ? 'Tema gelap aktif.' : 'Tema terang aktif.', 'info');
-        },
-    };
-
-    Perpus.theme = Theme;
-
-    /* ------------------------------------------------------------------
      | Sidebar (mobile)
      |------------------------------------------------------------------*/
     function initSidebar() {
@@ -138,14 +101,18 @@ window.Perpus = window.Perpus || {};
 
         function open() {
             sidebar.classList.add('is-open');
+            sidebar.classList.remove('-translate-x-full');
+            backdrop?.classList.remove('hidden');
             backdrop?.classList.add('is-visible');
-            document.body.classList.add('perpus-no-scroll');
+            document.body.classList.add('perpus-no-scroll', 'overflow-hidden');
         }
 
         function close() {
             sidebar.classList.remove('is-open');
+            sidebar.classList.add('-translate-x-full');
+            backdrop?.classList.add('hidden');
             backdrop?.classList.remove('is-visible');
-            document.body.classList.remove('perpus-no-scroll');
+            document.body.classList.remove('perpus-no-scroll', 'overflow-hidden');
         }
 
         burger?.addEventListener('click', function (e) {
@@ -168,10 +135,61 @@ window.Perpus = window.Perpus || {};
         });
 
         // Menutup sidebar otomatis saat navigasi ke halaman baru (mobile).
-        sidebar.querySelectorAll('.perpus-nav-link').forEach(function (link) {
+        sidebar.querySelectorAll('.perpus-nav-item, .perpus-nav-link').forEach(function (link) {
             link.addEventListener('click', function () {
-                if (window.innerWidth < 1200) close();
+                if (window.innerWidth < 1024) close();
             });
+        });
+    }
+
+    function initNeoModals() {
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeModal(modal) {
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        window.PerpusModal = {
+            open: openModal,
+            close: function (id) {
+                closeModal(document.getElementById(id));
+            },
+        };
+
+        document.addEventListener('click', function (e) {
+            const opener = e.target.closest('[data-modal-open]');
+            if (opener) {
+                e.preventDefault();
+                openModal(opener.getAttribute('data-modal-open'));
+                return;
+            }
+
+            const closer = e.target.closest('[data-modal-close]');
+            if (closer) {
+                e.preventDefault();
+                closeModal(document.getElementById(closer.getAttribute('data-modal-close')));
+                return;
+            }
+
+            const backdrop = e.target.closest('[data-neo-modal]');
+            if (backdrop && e.target === backdrop) {
+                closeModal(backdrop);
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('[data-neo-modal].flex').forEach(closeModal);
+            }
         });
     }
 
@@ -498,11 +516,8 @@ window.Perpus = window.Perpus || {};
      | Inisialisasi
      |------------------------------------------------------------------*/
     document.addEventListener('DOMContentLoaded', function () {
-        Theme.apply(Theme.current());
-
-        document.getElementById('themeToggle')?.addEventListener('click', Theme.toggle);
-
         initSidebar();
+        initNeoModals();
         initEntranceAnimation();
         initTooltips();
         initSubmitGuards();

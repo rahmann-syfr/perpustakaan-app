@@ -4,195 +4,172 @@
 @section('page-title', 'Data Anggota Perpustakaan')
 
 @section('content')
-<div class="row g-3 mb-4">
-    <div class="col-6 col-lg-3">
-        <div class="card card-stat h-100 mb-0">
-            <div class="card-body">
-                <h6 class="text-muted small mb-1">Total Anggota</h6>
-                <h4 class="font-extrabold mb-0">{{ $summary['total'] }}</h4>
+<div class="space-y-6">
+    {{-- Header --}}
+    <x-ui.card :window="true" title="members.index" bodyClass="p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="font-headline-md text-[22px] font-extrabold text-[#0A0A0A] m-0">Daftar Anggota</h2>
+                <p class="font-sans text-[14px] text-[#4f4633] mt-1 mb-0">
+                    Kelola data anggota perpustakaan yang terdaftar di sistem.
+                </p>
             </div>
+            <x-ui.button variant="primary" icon="person_add" href="{{ route('members.create') }}">
+                Tambah Anggota
+            </x-ui.button>
         </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card card-stat h-100 mb-0">
-            <div class="card-body">
-                <h6 class="text-muted small mb-1">Sedang Meminjam</h6>
-                <h4 class="font-extrabold mb-0 text-success">{{ $summary['active'] }}</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card card-stat h-100 mb-0">
-            <div class="card-body">
-                <h6 class="text-muted small mb-1">Memiliki Tunggakan</h6>
-                <h4 class="font-extrabold mb-0 text-danger">{{ $summary['overdue'] }}</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="card card-stat h-100 mb-0">
-            <div class="card-body">
-                <h6 class="text-muted small mb-1">Ditampilkan</h6>
-                <h4 class="font-extrabold mb-0 text-primary">{{ $members->total() }}</h4>
-            </div>
-        </div>
-    </div>
-</div>
+    </x-ui.card>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
-                <div>
-                    <h4 class="card-title mb-1">Daftar Anggota</h4>
-                    <p class="text-muted small mb-0">Kelola profil dan akun anggota perpustakaan.</p>
+    {{-- 3 Kartu Ringkasan dari DB --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <x-ui.stat-card
+            color="yellow"
+            icon="groups"
+            badge="Terdaftar"
+            label="Total Anggota"
+            :value="number_format($summary['total'], 0, ',', '.')"
+        />
+        <x-ui.stat-card
+            color="mint"
+            icon="menu_book"
+            badge="Aktif"
+            label="Sedang Meminjam"
+            :value="number_format($summary['active'], 0, ',', '.')"
+        />
+        <x-ui.stat-card
+            color="pink"
+            icon="schedule"
+            badge="Perhatian"
+            label="Memiliki Tunggakan"
+            :value="number_format($summary['overdue'], 0, ',', '.')"
+        />
+    </div>
+
+    {{-- Pencarian & Filter --}}
+    <form action="{{ route('members.index') }}" method="GET" class="bg-white border-[3px] border-[#0A0A0A] neo-shadow-md p-4">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+            <div class="md:col-span-6">
+                <x-ui.input
+                    name="search"
+                    id="tableSearch"
+                    label="Pencarian"
+                    :value="request('search')"
+                    placeholder="Cari nama, email, atau no HP..."
+                />
+            </div>
+
+            <div class="md:col-span-4">
+                <x-ui.input name="status" id="memberStatusFilter" type="select" label="Status Pinjaman" onchange="this.form.submit()">
+                    <option value="">Semua Status</option>
+                    <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Sedang Meminjam</option>
+                    <option value="terlambat" {{ request('status') === 'terlambat' ? 'selected' : '' }}>Terlambat</option>
+                    <option value="nonaktif" {{ request('status') === 'nonaktif' ? 'selected' : '' }}>Bebas Pinjaman</option>
+                </x-ui.input>
+            </div>
+
+            <div class="md:col-span-2 flex items-center gap-2">
+                <x-ui.button type="submit" variant="primary" size="md" icon="search" class="w-full">
+                    Cari
+                </x-ui.button>
+                @if (request('search') || request('status'))
+                    <x-ui.button variant="secondary" size="md" href="{{ route('members.index') }}">
+                        Reset
+                    </x-ui.button>
+                @endif
+            </div>
+        </div>
+    </form>
+
+    {{-- Tabel Anggota --}}
+    @if ($members->isNotEmpty())
+        <x-ui.table :headers="['No', 'Anggota', 'Email', 'No HP', 'Status Pinjaman', 'Terdaftar', 'Aksi']">
+            @foreach ($members as $index => $member)
+                @php
+                    $activeCount = (int) $member->active_borrowings_count;
+                    $initial = strtoupper(mb_substr($member->name, 0, 1));
+                @endphp
+                <tr>
+                    <td class="font-mono text-xs w-14">{{ $members->firstItem() + $index }}</td>
+                    <td>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full border-[2px] border-[#0A0A0A] bg-[#F9C32E] flex items-center justify-center font-mono text-sm font-bold text-[#0A0A0A] shrink-0">
+                                {{ $initial }}
+                            </div>
+                            <a href="{{ route('members.show', $member) }}" class="font-bold text-[#0A0A0A] hover:underline">
+                                {{ $member->name }}
+                            </a>
+                        </div>
+                    </td>
+                    <td class="font-mono text-xs">{{ $member->email }}</td>
+                    <td class="font-mono text-xs">{{ $member->phone ?: '-' }}</td>
+                    <td>
+                        @if ($activeCount > 0)
+                            <x-ui.badge variant="warning">{{ $activeCount }} Aktif</x-ui.badge>
+                        @else
+                            <x-ui.badge variant="success">Bebas</x-ui.badge>
+                        @endif
+                    </td>
+                    <td class="font-mono text-xs">{{ $member->created_at?->format('d/m/Y') ?? '-' }}</td>
+                    <td class="w-48">
+                        <div class="flex items-center gap-1.5">
+                            <x-ui.button variant="info" size="sm" href="{{ route('members.show', $member) }}">Detail</x-ui.button>
+                            <x-ui.button variant="secondary" size="sm" href="{{ route('members.edit', $member) }}">Edit</x-ui.button>
+                            <x-ui.button variant="danger" size="sm" data-modal-open="deleteMemberModal{{ $member->id }}">Hapus</x-ui.button>
+                        </div>
+                    </td>
+                </tr>
+            @endforeach
+        </x-ui.table>
+
+        <div id="tableEmpty" class="hidden"></div>
+
+        <x-ui.pagination :paginator="$members" />
+    @else
+        <div id="tableEmpty">
+            <x-ui.empty-state
+                icon="badge"
+                :title="(request('search') || request('status')) ? 'Tidak Ada Anggota yang Cocok' : 'Belum Ada Anggota'"
+                :description="(request('search') || request('status')) ? 'Ubah kata kunci pencarian atau reset filter untuk melihat daftar lengkap.' : 'Tambahkan anggota pertama untuk mulai layanan peminjaman.'"
+            >
+                <div class="flex items-center justify-center gap-2">
+                    @if (request('search') || request('status'))
+                        <x-ui.button variant="secondary" size="sm" href="{{ route('members.index') }}">Reset Filter</x-ui.button>
+                    @endif
+                    <x-ui.button variant="primary" size="sm" icon="person_add" href="{{ route('members.create') }}">Tambah Anggota</x-ui.button>
                 </div>
-                <a href="{{ route('members.create') }}" class="btn btn-primary">
-                    <i class="bi bi-person-plus-fill me-1"></i> Tambah Anggota
-                </a>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('members.index') }}" method="GET" class="row g-2 mb-3">
-                    <div class="col-12 col-md-5">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" name="search" id="tableSearch" class="form-control border-start-0"
-                                   placeholder="Cari nama atau email anggota..."
-                                   value="{{ request('search') }}">
-                        </div>
-                    </div>
-                    <div class="col-7 col-md-3">
-                        <select name="status" class="form-select" onchange="this.form.submit()">
-                            <option value="">Semua Status</option>
-                            <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Meminjam</option>
-                            <option value="terlambat" {{ request('status') === 'terlambat' ? 'selected' : '' }}>Terlambat</option>
-                            <option value="nonaktif" {{ request('status') === 'nonaktif' ? 'selected' : '' }}>Tidak Meminjam</option>
-                        </select>
-                    </div>
-                    <div class="col-5 col-md-2 d-grid">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i> Filter</button>
-                    </div>
-                    <div class="col-12 col-md-2 d-flex align-items-center justify-content-md-end">
-                        @if(request('search') || request('status'))
-                            <a href="{{ route('members.index') }}" class="btn btn-light-secondary w-100">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
-                            </a>
-                        @else
-                            <span class="perpus-table-counter" id="tableCounter"></span>
-                        @endif
-                    </div>
-                </form>
-                @if($members->isEmpty())
-                    <div class="text-center py-5">
-                        @if(request('search') || request('status'))
-                            <div class="bg-light-secondary text-secondary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
-                                <i class="bi bi-search fs-1"></i>
-                            </div>
-                            <h5 class="fw-bold mb-1">Tidak Ada Anggota yang Cocok</h5>
-                            <p class="text-muted mb-3">Ubah kata kunci pencarian atau reset filter untuk melihat daftar lengkap.</p>
-                            <a href="{{ route('members.index') }}" class="btn btn-light-secondary btn-sm me-1">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filter
-                            </a>
-                            <a href="{{ route('members.create') }}" class="btn btn-primary btn-sm">
-                                <i class="bi bi-person-plus me-1"></i> Tambah Anggota
-                            </a>
-                        @else
-                            <div class="bg-light-primary text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
-                                <i class="bi bi-person-badge fs-1"></i>
-                            </div>
-                            <h5 class="fw-bold mb-1">Belum Ada Anggota</h5>
-                            <p class="text-muted mb-3">Tambahkan anggota pertama untuk mulai layanan peminjaman.</p>
-                            <a href="{{ route('members.create') }}" class="btn btn-primary btn-sm">
-                                <i class="bi bi-person-plus me-1"></i> Tambah Anggota
-                            </a>
-                        @endif
-                    </div>
-                @else
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle" id="table1">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 55px;">No</th>
-                                    <th>Nama Anggota</th>
-                                    <th>Email</th>
-                                    <th>No HP</th>
-                                    <th class="text-center">Aktif</th>
-                                    <th>Tgl Terdaftar</th>
-                                    <th class="text-center" style="width: 150px;">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($members as $index => $member)
-                                    <tr>
-                                        <td class="text-muted">{{ $members->firstItem() + $index }}</td>
-                                        <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <div class="avatar avatar-sm flex-shrink-0">
-                                                    <span class="avatar-content text-uppercase">{{ substr($member->name, 0, 1) }}</span>
-                                                </div>
-                                                <strong class="text-dark">{{ $member->name }}</strong>
-                                            </div>
-                                        </td>
-                                        <td><span class="text-muted">{{ $member->email }}</span></td>
-                                        <td><span class="text-muted">{{ $member->phone ?: '-' }}</span></td>
-                                        <td>
-                                            <span class="badge bg-light-primary text-primary">{{ $member->active_borrowings_count }} aktif</span>
-                                        </td>
-                                        <td>{{ $member->created_at?->format('d M Y') ?? '-' }}</td>
-                                        <td class="text-center">
-                                            <div class="table-action-buttons justify-content-center">
-                                                <a href="{{ route('members.show', $member->id) }}" class="btn btn-sm btn-light-primary text-primary" data-bs-toggle="tooltip" title="Detail">
-                                                    <i class="bi bi-eye-fill"></i>
-                                                </a>
-                                                <a href="{{ route('members.edit', $member->id) }}" class="btn btn-sm btn-light-warning text-warning" data-bs-toggle="tooltip" title="Edit">
-                                                    <i class="bi bi-pencil-square"></i>
-                                                </a>
-                                                <form action="{{ route('members.destroy', $member->id) }}" method="POST" class="form-delete">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-light-danger text-danger" data-bs-toggle="tooltip" title="Hapus">
-                                                        <i class="bi bi-trash-fill"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-
-                        <div class="perpus-table-empty" id="tableEmpty" hidden>
-                            <i class="bi bi-search"></i>
-                            <p class="mb-0 fw-semibold">Tidak ada anggota yang cocok</p>
-                            <small>Coba ubah kata kunci pencarian Anda.</small>
-                        </div>
-                    </div>
-                @endif
-
-                @if($members->hasPages())
-                    <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                        {{ $members->links() }}
-                        <span class="perpus-table-counter small">
-                            Menampilkan {{ $members->firstItem() ?? 0 }}-{{ $members->lastItem() ?? 0 }} dari {{ $members->total() }} anggota
-                        </span>
-                    </div>
-                @endif
-            </div>
+            </x-ui.empty-state>
         </div>
-    </div>
+    @endif
 </div>
 @endsection
 
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        Perpus.tableSearch({
-            input: '#tableSearch',
-            table: '#table1',
-            empty: '#tableEmpty',
-            counter: '#tableCounter',
-            columns: [1, 2],
-        });
-    });
-</script>
+@push('modals')
+    @foreach ($members as $member)
+        @php
+            $hasBorrowings = $member->borrowings()->exists();
+            $hasActive = $member->active_borrowings_count > 0;
+        @endphp
+        <x-ui.modal id="deleteMemberModal{{ $member->id }}" title="Hapus Anggota">
+            @if ($hasBorrowings)
+                <x-ui.alert type="error" :dismissible="false" title="Tidak Dapat Dihapus">
+                    Anggota <strong>{{ $member->name }}</strong> masih memiliki {{ $hasActive ? 'pinjaman aktif' : 'riwayat data peminjaman' }} di sistem sehingga tidak dapat dihapus.
+                </x-ui.alert>
+                <x-slot:footer>
+                    <x-ui.button variant="secondary" size="sm" data-modal-close="deleteMemberModal{{ $member->id }}">Tutup</x-ui.button>
+                </x-slot:footer>
+            @else
+                <p class="font-sans text-[14px] text-[#0A0A0A] m-0">
+                    Apakah Anda yakin ingin menghapus data anggota <strong>{{ $member->name }}</strong>?
+                </p>
+                <form id="deleteMemberForm{{ $member->id }}" action="{{ route('members.destroy', $member) }}" method="POST" class="hidden">
+                    @csrf
+                    @method('DELETE')
+                </form>
+                <x-slot:footer>
+                    <x-ui.button variant="secondary" size="sm" data-modal-close="deleteMemberModal{{ $member->id }}">Batal</x-ui.button>
+                    <x-ui.button type="submit" form="deleteMemberForm{{ $member->id }}" variant="danger" size="sm" icon="delete">Hapus Anggota</x-ui.button>
+                </x-slot:footer>
+            @endif
+        </x-ui.modal>
+    @endforeach
 @endpush
