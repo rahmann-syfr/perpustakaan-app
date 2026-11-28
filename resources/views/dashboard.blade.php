@@ -12,13 +12,11 @@
     $booksList = $booksList ?? collect();
     $anggotaList = $anggotaList ?? collect();
     $dipinjamList = $dipinjamList ?? collect();
-    $dendaList = $dendaList ?? collect();
 
     $countBuku = $countBuku ?? $booksList->count();
     $countStokBuku = $countStokBuku ?? $booksList->sum('total_stock');
     $countAnggota = $countAnggota ?? $anggotaList->count();
     $countDipinjam = $countDipinjam ?? $dipinjamList->count();
-    $sumDenda = $sumDenda ?? $dendaList->sum('fine_amount');
 
     $recentActivities = $recentActivities ?? collect();
     $overdueBorrowings = $overdueBorrowings ?? collect();
@@ -139,7 +137,7 @@
                 </div>
             </div>
             
-            <!-- 3. Buku Dipinjam -->
+            <!-- 4. Sedang Dipinjam -->
             <div class="col-6 col-lg-3 col-md-6">
                 <div class="card card-stat card-clickable h-100 mb-0"
                      data-bs-toggle="modal"
@@ -153,57 +151,8 @@
                                 </div>
                             </div>
                             <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Buku Dipinjam</h6>
+                                <h6 class="text-muted font-semibold mb-1">Sedang Dipinjam</h6>
                                 <h5 class="font-extrabold mb-1">{{ $countDipinjam }}</h5>
-                                <span class="text-success fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-eye me-1"></i>Lihat rincian
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Total Denda -->
-            <div class="col-6 col-lg-3 col-md-6">
-                <div class="card card-stat card-clickable h-100 mb-0"
-                     data-bs-toggle="modal"
-                     data-bs-target="#totalDendaModal"
-                     title="Klik untuk melihat rincian transaksi denda">
-                    <div class="card-body px-4 py-4-5">
-                        <div class="row align-items-center">
-                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
-                                <div class="stats-icon red mb-2">
-                                    <i class="bi bi-cash-stack"></i>
-                                </div>
-                            </div>
-                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Total Denda</h6>
-                                <h5 class="font-extrabold mb-1">Rp{{ number_format($sumDenda, 0, ',', '.') }}</h5>
-                                <span class="text-danger fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-eye me-1"></i>Lihat rincian
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- 5. Denda Terbayar -->
-            <div class="col-6 col-lg-3 col-md-6">
-                <div class="card card-stat card-clickable h-100 mb-0"
-                     data-bs-toggle="modal"
-                     data-bs-target="#totalDendaModal"
-                     title="Klik untuk melihat rincian transaksi denda">
-                    <div class="card-body px-4 py-4-5">
-                        <div class="row align-items-center">
-                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
-                                <div class="stats-icon green mb-2">
-                                    <i class="bi bi-check-circle"></i>
-                                </div>
-                            </div>
-                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Denda Terbayar</h6>
-                                <h5 class="font-extrabold mb-1">Rp{{ number_format($paidFineTotal ?? 0, 0, ',', '.') }}</h5>
                                 <span class="text-success fw-semibold" style="font-size: 0.72rem;">
                                     <i class="bi bi-eye me-1"></i>Lihat rincian
                                 </span>
@@ -594,79 +543,6 @@
                     <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
                 </a>
                 <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 4. Modal Rincian Total Denda -->
-<div class="modal fade" id="totalDendaModal" tabindex="-1" aria-labelledby="totalDendaModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title text-white" id="totalDendaModalLabel">
-                    <i class="bi bi-cash-stack me-2"></i>Rincian Transaksi Terkena Denda
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control modal-table-search" data-target-table="tableModalDenda" placeholder="Filter judul buku atau nama peminjam...">
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="tableModalDenda">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 55px;">No</th>
-                                <th>Judul Buku</th>
-                                <th>Peminjam</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-end">Nominal Denda</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($dendaList as $index => $denda)
-                            <tr>
-                                <td class="text-muted">{{ $index + 1 }}</td>
-                                <td class="fw-semibold text-dark">{{ $denda->book->title ?? 'Buku Dihapus' }}</td>
-                                <td>{{ $denda->member->name ?? 'Anggota Dihapus' }}</td>
-                                <td class="text-center">
-                                    @if($denda->status === \App\Enums\BorrowingStatus::Returned)
-                                        <span class="badge bg-light-success text-success">Dikembalikan</span>
-                                    @elseif($denda->status === \App\Enums\BorrowingStatus::Lost)
-                                        <span class="badge bg-light-dark text-dark">Hilang</span>
-                                    @else
-                                        <span class="badge bg-light-danger text-danger">Terlambat</span>
-                                    @endif
-                                </td>
-                                <td class="text-end">
-                                    <span class="badge bg-light-danger text-danger fw-bold">
-                                        Rp{{ number_format($denda->fine_amount, 0, ',', '.') }}
-                                    </span>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-4">Belum ada catatan denda keterlambatan.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer justify-content-between">
-                <div class="fw-bold text-danger">
-                    Total Akumulasi: Rp{{ number_format($sumDenda, 0, ',', '.') }}
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('borrowings.index') }}" class="btn btn-danger btn-sm">
-                        <i class="bi bi-file-earmark-text me-1"></i> Lihat Sirkulasi
-                    </a>
-                    <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-                </div>
             </div>
         </div>
     </div>

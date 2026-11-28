@@ -27,11 +27,6 @@ class Member extends Model
         return $this->hasMany(Borrowing::class, 'member_id');
     }
 
-    public function finePayments(): HasMany
-    {
-        return $this->hasMany(FinePayment::class, 'member_id');
-    }
-
     /**
      * Peminjaman yang masih aktif milik anggota ini.
      */

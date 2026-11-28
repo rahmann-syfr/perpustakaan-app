@@ -4,7 +4,6 @@ use App\Enums\BorrowingStatus;
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
-use App\Models\FinePayment;
 use App\Models\Member;
 use App\Models\User;
 
@@ -14,9 +13,9 @@ use App\Models\User;
  */
 it('merender seluruh halaman utama untuk semua role tanpa error', function () {
     $halamanStaff = [
-        'dashboard', 'profile.show', 'fines.index',
+        'dashboard', 'profile.show',
         'borrowings.index', 'books.index', 'categories.index', 'members.index',
-        'analytics.index', 'borrowings.create', 'books.create', 'members.create',
+        'borrowings.create', 'books.create', 'members.create',
     ];
 
     // Manajemen pengguna dan pengaturan sistem hanya untuk admin.
@@ -47,10 +46,8 @@ it('merender halaman staf dengan data lengkap', function () {
         'fine_amount' => 5000,
     ]);
 
-    FinePayment::factory()->create(['borrowing_id' => $borrowing->id, 'member_id' => $member->id]);
-
-    foreach (['dashboard', 'fines.index', 'borrowings.index',
-        'members.index', 'books.index', 'categories.index', 'analytics.index'] as $routeName) {
+    foreach (['dashboard', 'borrowings.index',
+        'members.index', 'books.index', 'categories.index'] as $routeName) {
         $this->actingAs($petugas)->get(route($routeName))->assertOk();
     }
 
@@ -81,30 +78,6 @@ it('merender halaman profil pengguna', function () {
     $this->actingAs($petugas)->get(route('profile.show'))->assertOk()
         ->assertSee('Petugas Perpus')
         ->assertSee('petugas.profil@perpus.test');
-});
-
-it('merender halaman denda saat tabel kosong dan terisi', function () {
-    $petugas = User::factory()->petugas()->create();
-    $member = Member::factory()->create();
-    $book = Book::factory()->create();
-
-    $this->actingAs($petugas)->get(route('fines.index'))->assertOk();
-
-    $borrowing = Borrowing::factory()->create([
-        'member_id' => $member->id,
-        'book_id' => $book->id,
-        'fine_amount' => 10000,
-    ]);
-
-    // Pembayaran parsial sehingga masih ada sisa denda yang harus dibayar.
-    FinePayment::factory()->create([
-        'borrowing_id' => $borrowing->id,
-        'member_id' => $member->id,
-        'amount' => 4000,
-    ]);
-
-    $this->actingAs($petugas)->get(route('fines.index'))->assertOk();
-    $this->actingAs($petugas)->get(route('fines.create', $borrowing))->assertOk();
 });
 
 it('mengunduh laporan PDF sirkulasi tanpa error', function () {

@@ -237,11 +237,6 @@
                                                         <i class="bi bi-calendar-plus me-1"></i>Perpanjang
                                                     </button>
                                                 @endif
-                                                @if($row->hasOutstandingFine())
-                                                    <a href="{{ route('fines.create', $row) }}" class="btn btn-sm btn-light-danger fw-semibold">
-                                                        <i class="bi bi-cash-coin me-1"></i>Bayar Denda
-                                                    </a>
-                                                @endif
                                                 <button type="button"
                                                         class="btn btn-sm btn-primary fw-semibold"
                                                         data-bs-toggle="modal"

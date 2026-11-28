@@ -1,12 +1,10 @@
 <?php
 
-use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\FinePaymentController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
@@ -55,9 +53,6 @@ Route::middleware('auth')->group(function () {
 
     // Operasional perpustakaan: admin & petugas.
     Route::middleware('role:admin,petugas')->group(function () {
-        // Laporan & analitik.
-        Route::get('/laporan', [AnalyticsController::class, 'index'])->name('analytics.index');
-
         // Kategori buku.
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 
@@ -85,11 +80,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/borrowings', [BorrowingController::class, 'store'])->name('borrowings.store');
         Route::post('/borrowings/{borrowing}/return', [BorrowingController::class, 'returnBook'])->name('borrowings.return');
         Route::post('/borrowings/{borrowing}/perpanjang', [BorrowingController::class, 'extend'])->name('borrowings.extend');
-
-        // Pembayaran denda.
-        Route::get('/denda', [FinePaymentController::class, 'index'])->name('fines.index');
-        Route::get('/denda/{borrowing}/bayar', [FinePaymentController::class, 'create'])->name('fines.create');
-        Route::post('/denda/{borrowing}/bayar', [FinePaymentController::class, 'store'])->name('fines.store');
     });
 
     // Detail buku: terbuka untuk semua pengguna, tetapi diletakkan di akhir
