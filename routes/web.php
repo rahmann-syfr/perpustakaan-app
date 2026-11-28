@@ -86,3 +86,7 @@ Route::middleware('auth')->group(function () {
     // agar route eksak (/books/create, /books/{book}/edit) tetap diprioritaskan.
     Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
 });
+
+if (app()->isLocal()) {
+    Route::view('/ui-kit', 'ui-kit')->name('ui-kit');
+}

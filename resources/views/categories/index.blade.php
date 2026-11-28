@@ -4,173 +4,205 @@
 @section('page-title', 'Manajemen Kategori')
 
 @section('content')
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
-                <div>
-                    <h4 class="card-title mb-1">Daftar Kategori Buku</h4>
-                    <p class="text-muted small mb-0">Kelola pengelompokan koleksi buku perpustakaan.</p>
-                </div>
-                @if(auth()->user()->role === \App\Enums\Role::Admin)
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
-                        <i class="bi bi-plus-lg me-1"></i> Tambah Kategori
-                    </button>
-                @endif
+@php
+    $isAdmin = auth()->user()->role === \App\Enums\Role::Admin;
+@endphp
+
+<div class="space-y-6">
+    <x-ui.card :window="true" title="categories.index" bodyClass="p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="font-headline-md text-[22px] font-extrabold text-[#0A0A0A] m-0">Daftar Kategori Buku</h2>
+                <p class="font-sans text-[14px] text-[#4f4633] mt-1 mb-0">
+                    Kelola pengelompokan koleksi buku perpustakaan.
+                </p>
             </div>
 
-            <div class="card-body">
-                <div class="row g-2 mb-3">
-                    <div class="col-12 col-md-8">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" id="tableSearch" class="form-control border-start-0"
-                                   placeholder="Cari nama kategori..." autocomplete="off">
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-4 d-flex align-items-center justify-content-md-end">
-                        <span class="perpus-table-counter" id="tableCounter"></span>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle" id="table1">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 65px;">No</th>
-                                <th>Nama Kategori</th>
-                                @if(auth()->user()->role === \App\Enums\Role::Admin)
-                                    <th class="text-center" style="width: 180px;">Aksi</th>
-                                @endif
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($categories as $index => $category)
-                                <tr>
-                                    <td class="text-muted">{{ $index + 1 }}</td>
-                                    <td>
-                                        <span class="badge bg-light-primary text-primary me-2">
-                                            <i class="bi bi-tag-fill"></i>
-                                        </span>
-                                        <strong class="text-dark">{{ $category->name }}</strong>
-                                    </td>
-                                    @if(auth()->user()->role === \App\Enums\Role::Admin)
-                                        <td class="text-center">
-                                            <div class="table-action-buttons justify-content-center">
-                                                <button type="button"
-                                                        class="btn btn-sm btn-light-warning text-warning fw-semibold"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#editModal{{ $category->id }}"
-                                                        title="Edit Kategori">
-                                                    <i class="bi bi-pencil-square me-1"></i>Edit
-                                                </button>
-
-                                                <form action="{{ route('categories.destroy', $category) }}" method="POST" class="form-delete">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-light-danger text-danger fw-semibold" title="Hapus Kategori">
-                                                        <i class="bi bi-trash-fill me-1"></i>Hapus
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    @endif
-                                </tr>
-                            @endforeach
-
-                            @if($categories->isEmpty())
-                                @include('partials.empty-row', [
-                                    'colspan' => auth()->user()->role === \App\Enums\Role::Admin ? 3 : 2,
-                                    'icon' => 'bi-tags',
-                                    'title' => 'Belum Ada Kategori',
-                                    'text' => auth()->user()->role === \App\Enums\Role::Admin
-                                        ? 'Tambahkan kategori pertama untuk mulai mengelompokkan koleksi buku.'
-                                        : 'Belum ada data kategori buku yang tersedia.',
-                                ])
-                            @endif
-                        </tbody>
-                    </table>
-
-                    <div class="perpus-table-empty" id="tableEmpty" hidden>
-                        <i class="bi bi-search"></i>
-                        <p class="mb-0 fw-semibold">Kategori tidak ditemukan</p>
-                        <small>Coba ubah kata kunci pencarian Anda.</small>
-                    </div>
-                </div>
-
-                @if($categories->hasPages())
-                    <div class="mt-3 d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                        {{ $categories->links() }}
-                        <span class="perpus-table-counter small">
-                            Menampilkan {{ $categories->firstItem() ?? 0 }}-{{ $categories->lastItem() ?? 0 }} dari {{ $categories->total() }} kategori
-                        </span>
-                    </div>
-                @endif
-            </div>
+            @if ($isAdmin)
+                <x-ui.button variant="primary" icon="add" data-modal-open="addCategoryModal">
+                    Tambah Kategori
+                </x-ui.button>
+            @else
+                <x-ui.badge variant="info" icon="lock">
+                    Hanya Admin yang dapat mengelola kategori
+                </x-ui.badge>
+            @endif
         </div>
+    </x-ui.card>
+
+    <div class="bg-white border-[3px] border-[#0A0A0A] neo-shadow-md p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div class="relative flex-1">
+            <input
+                type="text"
+                id="tableSearch"
+                placeholder="Cari nama kategori pada halaman ini..."
+                autocomplete="off"
+                class="w-full bg-white text-[#0A0A0A] font-sans text-[14px] px-4 py-2.5 border-[3px] border-[#0A0A0A] neo-shadow-sm focus:outline-none focus:border-[#7B4DFF]"
+            />
+        </div>
+        <span id="categoryCounter" class="font-mono text-[11px] font-bold uppercase text-[#4f4633] shrink-0">
+            {{ $categories->count() }} kategori ditampilkan
+        </span>
     </div>
+
+    @if ($categories->isNotEmpty())
+        <x-ui.table :headers="$isAdmin ? ['No', 'Nama Kategori', 'Jumlah Buku', 'Aksi'] : ['No', 'Nama Kategori', 'Jumlah Buku']" id="categoryTable">
+            @foreach ($categories as $index => $category)
+                @php
+                    $bookCount = $category->books()->count();
+                @endphp
+                <tr data-category-row data-name="{{ mb_strtolower($category->name) }}">
+                    <td class="font-mono text-xs w-16">{{ ($categories->firstItem() ?? 1) + $index }}</td>
+                    <td class="font-bold">
+                        <div class="flex items-center gap-2">
+                            <span class="w-7 h-7 bg-[#FFF6E0] border-[2px] border-[#0A0A0A] flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-[16px]">bookmarks</span>
+                            </span>
+                            <span>{{ $category->name }}</span>
+                        </div>
+                    </td>
+                    <td class="font-mono text-xs">
+                        <x-ui.badge variant="mint">{{ $bookCount }} BUKU</x-ui.badge>
+                    </td>
+                    @if ($isAdmin)
+                        <td class="w-48">
+                            <div class="flex items-center gap-2">
+                                <x-ui.button variant="secondary" size="sm" icon="edit" data-modal-open="editCategoryModal{{ $category->id }}">
+                                    Edit
+                                </x-ui.button>
+                                <x-ui.button variant="danger" size="sm" icon="delete" data-modal-open="deleteCategoryModal{{ $category->id }}">
+                                    Hapus
+                                </x-ui.button>
+                            </div>
+                        </td>
+                    @endif
+                </tr>
+            @endforeach
+        </x-ui.table>
+
+        <div id="tableEmpty" class="hidden">
+            <x-ui.empty-state icon="search_off" title="Kategori Tidak Ditemukan" description="Tidak ada kategori yang cocok dengan kata kunci pencarian Anda." />
+        </div>
+
+        <x-ui.pagination :paginator="$categories" />
+    @else
+        <div id="tableEmpty">
+            <x-ui.empty-state
+                icon="bookmarks"
+                title="Belum Ada Kategori"
+                :description="$isAdmin ? 'Tambahkan kategori pertama untuk mulai mengelompokkan koleksi buku.' : 'Belum ada data kategori buku yang tersedia.'"
+            >
+                @if ($isAdmin)
+                    <x-ui.button variant="primary" size="sm" icon="add" data-modal-open="addCategoryModal">
+                        Tambah Kategori
+                    </x-ui.button>
+                @endif
+            </x-ui.empty-state>
+        </div>
+    @endif
 </div>
 @endsection
 
-@include('partials.table-search-script')
-
-@if(auth()->user()->role === \App\Enums\Role::Admin)
+@if ($isAdmin)
 @push('modals')
-<!-- Modal Tambah Kategori -->
-<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header perpus-modal-header">
-                <h5 class="modal-title text-white" id="addCategoryModalLabel">
-                    <i class="bi bi-plus-circle me-2"></i>Tambah Kategori Baru
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ route('categories.store') }}" method="POST">
-                @csrf
-                <div class="modal-body p-4">
-                    <label class="form-label fw-semibold">Nama Kategori <span class="text-danger">*</span></label>
-                    <input type="text" name="name" placeholder="Contoh: Pemrograman Web" class="form-control" required>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-save me-1"></i> Simpan
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+    {{-- Modal Tambah Kategori --}}
+    <x-ui.modal id="addCategoryModal" title="Tambah Kategori Baru">
+        <form id="addCategoryForm" action="{{ route('categories.store') }}" method="POST" class="space-y-4">
+            @csrf
+            <x-ui.input
+                name="name"
+                id="add_category_name"
+                label="Nama Kategori"
+                placeholder="Contoh: Pemrograman Web"
+                :required="true"
+            />
+        </form>
+        <x-slot:footer>
+            <x-ui.button variant="secondary" size="sm" data-modal-close="addCategoryModal">Batal</x-ui.button>
+            <x-ui.button type="submit" form="addCategoryForm" variant="primary" size="sm" icon="save">Simpan</x-ui.button>
+        </x-slot:footer>
+    </x-ui.modal>
 
-<!-- Modal Edit Kategori (Ditempatkan di luar tabel agar valid & bebas bug backdrop) -->
-@foreach ($categories as $category)
-<div class="modal fade" id="editModal{{ $category->id }}" tabindex="-1" aria-labelledby="editModalLabel{{ $category->id }}" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header perpus-modal-header-warning">
-                <h5 class="modal-title fw-bold" id="editModalLabel{{ $category->id }}">
-                    <i class="bi bi-pencil-square me-2"></i>Edit Kategori
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ route('categories.update', $category) }}" method="POST">
+    {{-- Modal Edit & Hapus per Kategori --}}
+    @foreach ($categories as $category)
+        @php
+            $bookCount = $category->books()->count();
+        @endphp
+
+        <x-ui.modal id="editCategoryModal{{ $category->id }}" title="Edit Kategori">
+            <form id="editCategoryForm{{ $category->id }}" action="{{ route('categories.update', $category) }}" method="POST" class="space-y-4">
                 @csrf
                 @method('PUT')
-                <div class="modal-body p-4">
-                    <label class="form-label fw-semibold">Nama Kategori <span class="text-danger">*</span></label>
-                    <input type="text" name="name" class="form-control" value="{{ $category->name }}" required>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-warning btn-sm fw-semibold">
-                        <i class="bi bi-save me-1"></i> Simpan Perubahan
-                    </button>
-                </div>
+                <x-ui.input
+                    name="name"
+                    id="edit_category_name_{{ $category->id }}"
+                    label="Nama Kategori"
+                    :value="$category->name"
+                    :required="true"
+                />
             </form>
-        </div>
-    </div>
-</div>
-@endforeach
+            <x-slot:footer>
+                <x-ui.button variant="secondary" size="sm" data-modal-close="editCategoryModal{{ $category->id }}">Batal</x-ui.button>
+                <x-ui.button type="submit" form="editCategoryForm{{ $category->id }}" variant="primary" size="sm" icon="save">Simpan Perubahan</x-ui.button>
+            </x-slot:footer>
+        </x-ui.modal>
+
+        <x-ui.modal id="deleteCategoryModal{{ $category->id }}" title="Hapus Kategori">
+            @if ($bookCount > 0)
+                <x-ui.alert type="error" :dismissible="false" title="Tidak Dapat Dihapus">
+                    Kategori <strong>{{ $category->name }}</strong> masih memiliki <strong>{{ $bookCount }} buku</strong>. Pindahkan atau hapus buku terkait terlebih dahulu.
+                </x-ui.alert>
+                <x-slot:footer>
+                    <x-ui.button variant="secondary" size="sm" data-modal-close="deleteCategoryModal{{ $category->id }}">Tutup</x-ui.button>
+                </x-slot:footer>
+            @else
+                <p class="font-sans text-[14px] text-[#0A0A0A] m-0">
+                    Apakah Anda yakin ingin menghapus kategori <strong>{{ $category->name }}</strong>? Tindakan ini tidak dapat dibatalkan.
+                </p>
+                <form id="deleteCategoryForm{{ $category->id }}" action="{{ route('categories.destroy', $category) }}" method="POST" class="hidden">
+                    @csrf
+                    @method('DELETE')
+                </form>
+                <x-slot:footer>
+                    <x-ui.button variant="secondary" size="sm" data-modal-close="deleteCategoryModal{{ $category->id }}">Batal</x-ui.button>
+                    <x-ui.button type="submit" form="deleteCategoryForm{{ $category->id }}" variant="danger" size="sm" icon="delete">Hapus Kategori</x-ui.button>
+                </x-slot:footer>
+            @endif
+        </x-ui.modal>
+    @endforeach
 @endpush
 @endif
+
+@push('scripts')
+<script>
+    (function () {
+        const input = document.getElementById('tableSearch');
+        const rows = document.querySelectorAll('[data-category-row]');
+        const counter = document.getElementById('categoryCounter');
+        const emptyBox = document.getElementById('tableEmpty');
+        const tableWrap = document.getElementById('categoryTable');
+
+        if (!input || !rows.length) return;
+
+        input.addEventListener('input', function () {
+            const q = input.value.trim().toLowerCase();
+            let visible = 0;
+
+            rows.forEach(function (row) {
+                const name = row.getAttribute('data-name') || '';
+                const match = !q || name.includes(q);
+                row.classList.toggle('hidden', !match);
+                if (match) visible++;
+            });
+
+            if (counter) {
+                counter.textContent = visible + ' kategori ditampilkan';
+            }
+            if (emptyBox && tableWrap) {
+                emptyBox.classList.toggle('hidden', visible > 0);
+                tableWrap.classList.toggle('hidden', visible === 0);
+            }
+        });
+    })();
+</script>
+@endpush

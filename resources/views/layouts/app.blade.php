@@ -1,85 +1,88 @@
 @php
     $appName = \App\Models\SystemSetting::get('nama_perpustakaan') ?: 'PerpusApp';
+    $user = \Illuminate\Support\Facades\Auth::user();
+    $displayName = $user?->name ?? 'Pengguna';
+    $displayRole = $user?->role?->label() ?? 'Tamu';
+    $initial = strtoupper(mb_substr($displayName, 0, 1));
 @endphp
 <!DOCTYPE html>
-<html lang="id" data-theme="light">
+<html lang="id">
 <head>
-    <script>
-        (function () {
-            try {
-                if (localStorage.getItem('perpus-theme') === 'dark') {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                }
-            } catch (e) {}
-        })();
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', $appName.' - Sistem Informasi Perpustakaan')</title>
+    <title>@yield('title', $appName . ' - Sistem Informasi Perpustakaan')</title>
 
-    <!-- Bootstrap & Icons (kompatibel komponen halaman) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @stack('styles')
 </head>
-<body>
-    <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+<body class="bg-grid-paper font-body-md text-[#0A0A0A] min-h-screen">
+    <div id="sidebarBackdrop" class="fixed inset-0 z-40 hidden bg-[#0A0A0A]/50 lg:hidden" aria-hidden="true"></div>
 
-    <div id="app">
-        @include('layouts.sidebar')
+    @include('layouts.sidebar')
 
-        <div id="main">
-            <div class="perpus-topbar">
-                <div class="d-flex align-items-center gap-3">
-                    <a href="#" class="burger-btn" id="burgerBtn" aria-label="Buka menu">
-                        <i class="bi bi-list fs-4"></i>
-                    </a>
-                    <div>
-                        <h1 class="perpus-page-title">@yield('page-title')</h1>
-                        <p class="perpus-page-title-sub mb-0 d-none d-md-block">Sistem Informasi Perpustakaan</p>
-                    </div>
+    <div class="lg:pl-[260px] min-h-screen flex flex-col">
+        <header class="fixed top-0 left-0 lg:left-[260px] right-0 h-[72px] bg-white border-b-[3px] border-[#0A0A0A] z-30 px-4 md:px-6 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+                <button
+                    type="button"
+                    id="burgerBtn"
+                    aria-label="Buka menu"
+                    class="lg:hidden w-10 h-10 bg-[#F9C32E] border-[3px] border-[#0A0A0A] neo-shadow-sm flex items-center justify-center shrink-0 cursor-pointer"
+                >
+                    <span class="material-symbols-outlined text-[22px] text-[#0A0A0A]">menu</span>
+                </button>
+
+                <div class="hidden sm:flex w-6 h-6 bg-[#F9C32E] border-[2px] border-[#0A0A0A] rotate-45 items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[15px] text-[#0A0A0A] -rotate-45">star</span>
                 </div>
-                <div class="d-flex align-items-center gap-2 ms-auto">
-                    <a href="{{ route('profile.show') }}" class="btn btn-sm btn-light-secondary d-none d-md-inline-flex align-items-center" title="Profil Saya">
-                        <i class="bi bi-person-circle me-1"></i> Profil
-                    </a>
-                    <button type="button" class="btn btn-sm perpus-theme-toggle" id="themeToggle" aria-label="Ganti tema tampilan">
-                        <i class="bi bi-moon-stars-fill" id="themeToggleIcon"></i>
-                    </button>
-                </div>
+
+                <h1 class="font-headline-lg text-[18px] md:text-[20px] uppercase tracking-wider font-extrabold text-[#0A0A0A] truncate m-0">
+                    @yield('page-title', 'Sistem Informasi Perpustakaan')
+                </h1>
             </div>
 
-            <div class="flex-grow-1">
-                <section class="section">
-                    @yield('content')
-                </section>
+            <div class="flex items-center gap-3 shrink-0">
+                @if ($user)
+                    <a href="{{ route('profile.show') }}" class="flex items-center gap-2.5 border-[3px] border-[#0A0A0A] bg-[#A9D9BC] py-1 px-2.5 neo-shadow-sm neo-shadow-hover transition-all text-[#0A0A0A] no-underline">
+                        <div class="w-8 h-8 rounded-full border-[2px] border-[#0A0A0A] bg-[#F9C32E] flex items-center justify-center font-mono text-xs font-bold text-[#0A0A0A] shrink-0">
+                            {{ $initial }}
+                        </div>
+                        <div class="hidden sm:flex flex-col text-left min-w-0">
+                            <span class="font-headline-sm text-xs font-bold text-[#0A0A0A] leading-tight truncate max-w-[140px]">{{ $displayName }}</span>
+                            <span class="font-label-sm text-[9px] uppercase font-bold text-[#0A0A0A]/80">{{ $displayRole }}</span>
+                        </div>
+                    </a>
+                @endif
             </div>
+        </header>
 
-            <footer class="perpus-footer d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-                <p class="mb-0">&copy; {{ now()->year }} <strong>{{ $appName }}</strong> &mdash; Perpustakaan Digital</p>
-                <p class="mb-0">Dibangun dengan <span class="text-danger"><i class="bi bi-heart-fill"></i></span> untuk edukasi</p>
-            </footer>
-        </div>
+        <main class="relative pt-[72px] flex-1 bg-grid-paper w-full">
+            <div class="flex flex-col w-full p-6 md:p-8 space-y-6">
+                @if (session('success'))
+                    <x-ui.alert type="success">{{ session('success') }}</x-ui.alert>
+                @endif
+
+                @if (session('error'))
+                    <x-ui.alert type="error">{{ session('error') }}</x-ui.alert>
+                @endif
+
+                @if (session('warning'))
+                    <x-ui.alert type="warning">{{ session('warning') }}</x-ui.alert>
+                @endif
+
+                @yield('content')
+            </div>
+        </main>
     </div>
 
-    <!-- Wadah Modal Global (mencegah konflik z-index / backdrop) -->
     @stack('modals')
-
-    <!-- Penampung Flash Message (agar bebas warning linter JS di VS Code) -->
-    <div id="flash-messages"
-         data-success="{{ session('success') }}"
-         data-error="{{ session('error') }}"
-         data-warning="{{ session('warning') }}"
-         data-validation="{{ $errors->any() ? $errors->first() : '' }}"
-         class="d-none">
-    </div>
-
-    <!-- Core Scripts: vanilla JS (tanpa jQuery/DataTables) untuk performa lebih baik -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     @include('partials.scroll-memory')
 
