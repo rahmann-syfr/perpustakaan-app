@@ -12,12 +12,9 @@ it('menampilkan halaman laporan analitik untuk petugas', function () {
         ->assertSee('Tren Peminjaman Bulanan');
 });
 
-it('menolak akses laporan untuk anggota', function () {
-    $anggota = User::factory()->anggota()->create();
-
-    $this->actingAs($anggota)
-        ->get(route('analytics.index'))
-        ->assertRedirect(route('dashboard'));
+it('menolak tamu mengakses laporan analitik', function () {
+    $this->get(route('analytics.index'))
+        ->assertRedirect(route('login'));
 });
 
 it('menyimpan pengaturan sistem', function () {
@@ -45,26 +42,22 @@ it('menyimpan pengaturan sistem', function () {
         ->and(SystemSetting::getInt('durasi_perpanjangan', 0))->toBe(5);
 });
 
-it('menolak anggota menyimpan pengaturan sistem', function () {
-    $anggota = User::factory()->anggota()->create();
+it('menolak petugas menyimpan pengaturan sistem', function () {
+    $petugas = User::factory()->petugas()->create();
 
-    $this->actingAs($anggota)
+    $this->actingAs($petugas)
         ->put(route('settings.update'), [])
         ->assertRedirect(route('dashboard'));
 });
 
-it('anggota tidak dapat membuka daftar data buku', function () {
-    $anggota = User::factory()->anggota()->create();
+it('petugas dapat membuka daftar data buku dan form tambah buku', function () {
+    $petugas = User::factory()->petugas()->create();
 
-    $this->actingAs($anggota)
+    $this->actingAs($petugas)
         ->get(route('books.index'))
-        ->assertRedirect(route('dashboard'));
-});
+        ->assertOk();
 
-it('anggota tidak dapat membuka form tambah buku', function () {
-    $anggota = User::factory()->anggota()->create();
-
-    $this->actingAs($anggota)
+    $this->actingAs($petugas)
         ->get(route('books.create'))
-        ->assertRedirect(route('dashboard'));
+        ->assertOk();
 });

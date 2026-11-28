@@ -7,14 +7,6 @@ use App\Models\Member;
 use App\Models\SystemSetting;
 use App\Models\User;
 
-it('menolak anggota membuka halaman sirkulasi', function () {
-    $anggota = User::factory()->anggota()->create();
-
-    $this->actingAs($anggota)
-        ->get(route('borrowings.index'))
-        ->assertRedirect(route('dashboard'));
-});
-
 it('menolak petugas membuka manajemen user', function () {
     $petugas = User::factory()->petugas()->create();
 
@@ -23,18 +15,10 @@ it('menolak petugas membuka manajemen user', function () {
         ->assertRedirect(route('dashboard'));
 });
 
-it('menolak anggota membuat buku', function () {
-    $anggota = User::factory()->anggota()->create();
+it('memberikan admin akses penuh kelola user', function () {
+    $admin = User::factory()->admin()->create();
 
-    $this->actingAs($anggota)
-        ->get(route('books.create'))
-        ->assertRedirect(route('dashboard'));
-});
-
-it('memberikan superadmin akses penuh kelola user', function () {
-    $superadmin = User::factory()->superadmin()->create();
-
-    $this->actingAs($superadmin)
+    $this->actingAs($admin)
         ->get(route('users.index'))
         ->assertOk();
 });
@@ -206,21 +190,21 @@ it('menolak pengembalian transaksi yang sudah selesai', function () {
         ->assertSessionHasErrors('status');
 });
 
-it('dashboard anggota tidak menampilkan kartu total anggota', function () {
-    $anggota = User::factory()->anggota()->create();
+it('dashboard petugas menampilkan kartu jumlah member', function () {
+    $petugas = User::factory()->petugas()->create();
 
-    $this->actingAs($anggota)
+    $this->actingAs($petugas)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertDontSee('Total Anggota', false);
+        ->assertSee('Jumlah Member', false);
 });
 
-it('dashboard admin menampilkan kartu total anggota', function () {
+it('dashboard admin menampilkan kartu jumlah member', function () {
     $admin = User::factory()->admin()->create();
     Member::factory()->count(2)->create();
 
     $this->actingAs($admin)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Total Anggota', false);
+        ->assertSee('Jumlah Member', false);
 });

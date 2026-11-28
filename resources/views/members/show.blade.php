@@ -21,6 +21,14 @@
                         <span class="value">{{ $member->email }}</span>
                     </li>
                     <li>
+                        <span class="label">No HP</span>
+                        <span class="value">{{ $member->phone ?: '-' }}</span>
+                    </li>
+                    <li>
+                        <span class="label">Alamat</span>
+                        <span class="value">{{ $member->address ?: '-' }}</span>
+                    </li>
+                    <li>
                         <span class="label">Bergabung</span>
                         <span class="value">{{ $member->created_at?->format('d M Y') ?? '-' }}</span>
                     </li>
@@ -30,8 +38,8 @@
                     </li>
                 </ul>
                 <div class="d-grid gap-2 mt-3">
-                    <a href="{{ route('members.edit', $member->id) }}" class="btn btn-primary">
-                        <i class="bi bi-pencil-square me-1"></i> Edit Profil
+                    <a href="{{ route('members.edit', $member) }}" class="btn btn-primary">
+                        <i class="bi bi-pencil-square me-1"></i> Edit Data Anggota
                     </a>
                     <a href="{{ route('members.index') }}" class="btn btn-light-secondary">
                         <i class="bi bi-arrow-left me-1"></i> Kembali
@@ -45,8 +53,8 @@
         <div class="card h-100">
             <div class="card-header">
                 <div>
-                    <h4 class="card-title mb-1">Riwayat Peminjaman</h4>
-                    <p class="text-muted small mb-0">Semua transaksi yang dilakukan anggota ini.</p>
+                    <h4 class="card-title mb-1">Daftar Peminjaman</h4>
+                    <p class="text-muted small mb-0">Semua transaksi peminjaman buku oleh anggota ini.</p>
                 </div>
             </div>
             <div class="card-body">

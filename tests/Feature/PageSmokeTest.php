@@ -62,9 +62,9 @@ function daftarHalamanGet(): array
         'anggota' => ['members.index', []],
         'anggota cari' => ['members.index', []],
         'anggota status' => ['members.index', []],
-        'anggota detail' => ['members.show', ['id']],
+        'anggota detail' => ['members.show', ['member']],
         'anggota form' => ['members.create', []],
-        'anggota edit' => ['members.edit', ['id']],
+        'anggota edit' => ['members.edit', ['member']],
         'buku data' => ['books.index', []],
         'buku form' => ['books.create', []],
         'buku edit' => ['books.edit', ['book']],
@@ -91,7 +91,7 @@ function parameterRoute(array $kunci, array $data, array $query = []): array
 
     foreach ($kunci as $key) {
         $parameter[$key] = match ($key) {
-            'id' => $data['anggota']->id,
+            'member' => $data['anggota'],
             'user' => $data['targetUser'],
             default => $data[$key],
         };
@@ -230,11 +230,6 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
         $response->assertOk("Halaman [{$nama}] gagal dirender untuk role {$role}.");
     }
 })->with([
-    'anggota' => ['anggota', [
-        'dashboard' => ['dashboard', [], []],
-        'profil' => ['profile.show', [], []],
-        'buku show' => ['books.show', ['book'], []],
-    ]],
     'petugas' => ['petugas', [
         'dashboard' => ['dashboard', [], []],
         'profil' => ['profile.show', [], []],
@@ -245,9 +240,9 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
         'anggota' => ['members.index', [], []],
         'anggota cari' => ['members.index', [], ['search' => 'a']],
         'anggota status' => ['members.index', [], ['status' => 'terlambat']],
-        'anggota detail' => ['members.show', ['id'], []],
+        'anggota detail' => ['members.show', ['member'], []],
         'anggota form' => ['members.create', [], []],
-        'anggota edit' => ['members.edit', ['id'], []],
+        'anggota edit' => ['members.edit', ['member'], []],
         'buku data' => ['books.index', [], []],
         'buku form' => ['books.create', [], []],
         'buku edit' => ['books.edit', ['book'], []],
@@ -265,18 +260,7 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
         'pengguna edit' => ['users.edit', ['user'], []],
         'sirkulasi' => ['borrowings.index', [], []],
         'buku data' => ['books.index', [], []],
-        'kategori edit' => ['categories.edit', ['category'], []],
-    ]],
-    'superadmin' => ['superadmin', [
-        'dashboard' => ['dashboard', [], []],
-        'laporan' => ['analytics.index', [], []],
-        'pengaturan' => ['settings.index', [], []],
-        'anggota' => ['members.index', [], []],
-        'pengguna' => ['users.index', [], []],
-        'pengguna form' => ['users.create', [], []],
-        'pengguna edit' => ['users.edit', ['user'], []],
-        'sirkulasi' => ['borrowings.index', [], []],
-        'buku data' => ['books.index', [], []],
         'kategori' => ['categories.index', [], []],
+        'kategori edit' => ['categories.edit', ['category'], []],
     ]],
 ]);

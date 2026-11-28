@@ -24,27 +24,15 @@ class UserPolicy
     }
 
     /**
-     * Mengubah akun pengguna lain.
-     *
-     * Superadmin dapat mengubah semua akun. Admin hanya dapat mengelola
-     * petugas, anggota, dan profilnya sendiri.
+     * Mengubah akun pengguna (hanya Admin).
      */
     public function update(User $actor, User $target): bool
     {
-        if ($actor->role === Role::Superadmin) {
-            return true;
-        }
-
-        if ($actor->role !== Role::Admin) {
-            return false;
-        }
-
-        return $actor->id === $target->id
-            || in_array($target->role, [Role::Petugas, Role::Anggota], true);
+        return $actor->role === Role::Admin;
     }
 
     /**
-     * Menghapus akun pengguna.
+     * Menghapus akun pengguna (Admin tidak dapat menghapus akunnya sendiri).
      */
     public function delete(User $actor, User $target): bool
     {
@@ -52,12 +40,7 @@ class UserPolicy
             return false;
         }
 
-        if ($actor->role === Role::Superadmin) {
-            return true;
-        }
-
-        return $actor->role === Role::Admin
-            && in_array($target->role, [Role::Petugas, Role::Anggota], true);
+        return $actor->role === Role::Admin;
     }
 
     /**
@@ -67,20 +50,10 @@ class UserPolicy
      */
     public function assignableRoles(User $actor, ?User $target = null): array
     {
-        if ($actor->role === Role::Superadmin) {
-            return Role::values();
+        if ($actor->role !== Role::Admin) {
+            return [];
         }
 
-        if ($actor->role === Role::Admin) {
-            // Admin hanya boleh menetapkan role petugas atau anggota, kecuali
-            // untuk profilnya sendiri yang tetap harus berupa admin.
-            if ($target !== null && $target->id === $actor->id) {
-                return [Role::Admin->value];
-            }
-
-            return [Role::Petugas->value, Role::Anggota->value];
-        }
-
-        return [];
+        return Role::values();
     }
 }

@@ -4,10 +4,6 @@
 @section('page-title', 'Edit Data Pengguna')
 
 @section('content')
-@php
-    $canManageAllRoles = in_array(\App\Enums\Role::Superadmin->value, $assignableRoles, true);
-@endphp
-
 <div class="row justify-content-center">
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card">
@@ -69,11 +65,6 @@
                                 </option>
                             @endforeach
                         </select>
-                        @if(!$canManageAllRoles)
-                            <small class="text-muted d-block mt-1">
-                                <i class="bi bi-shield-exclamation me-1"></i>Role Admin dan Superadmin hanya dapat diatur oleh Superadmin.
-                            </small>
-                        @endif
                         @error('role')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 

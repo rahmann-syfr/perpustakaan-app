@@ -115,6 +115,7 @@
                                     <th style="width: 55px;">No</th>
                                     <th>Nama Anggota</th>
                                     <th>Email</th>
+                                    <th>No HP</th>
                                     <th class="text-center">Aktif</th>
                                     <th>Tgl Terdaftar</th>
                                     <th class="text-center" style="width: 150px;">Aksi</th>
@@ -133,6 +134,7 @@
                                             </div>
                                         </td>
                                         <td><span class="text-muted">{{ $member->email }}</span></td>
+                                        <td><span class="text-muted">{{ $member->phone ?: '-' }}</span></td>
                                         <td>
                                             <span class="badge bg-light-primary text-primary">{{ $member->active_borrowings_count }} aktif</span>
                                         </td>

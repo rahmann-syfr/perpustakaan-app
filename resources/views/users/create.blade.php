@@ -4,10 +4,6 @@
 @section('page-title', 'Tambah Data Pengguna')
 
 @section('content')
-@php
-    $canManageAllRoles = in_array(\App\Enums\Role::Superadmin->value, $assignableRoles, true);
-@endphp
-
 <div class="row justify-content-center">
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card">
@@ -15,7 +11,7 @@
                 <div>
                     <h4 class="card-title mb-1">Form Tambah User Baru</h4>
                     <p class="text-muted small mb-0">
-                        {{ $canManageAllRoles ? 'Buat akun baru untuk Superadmin, Admin, Petugas, atau Anggota.' : 'Buat akun baru untuk Petugas atau Anggota perpustakaan.' }}
+                        Buat akun baru untuk Admin atau Petugas perpustakaan.
                     </p>
                 </div>
                 <a href="{{ route('users.index') }}" class="btn btn-light-secondary btn-sm">
@@ -75,11 +71,6 @@
                                 </option>
                             @endforeach
                         </select>
-                        @if(!$canManageAllRoles)
-                            <small class="text-muted d-block mt-1">
-                                <i class="bi bi-shield-exclamation me-1"></i>Akun Admin dan Superadmin hanya dapat dibuat oleh Superadmin.
-                            </small>
-                        @endif
                         @error('role')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 

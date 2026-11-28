@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreMemberRequest;
+use App\Http\Requests\UpdateMemberRequest;
 use App\Models\Borrowing;
 use App\Models\Member;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +31,8 @@ class MemberController extends Controller
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
                 });
             })
             ->when($status === 'aktif', fn ($query) => $query->whereHas('borrowings', fn ($query) => $query->whereNull('return_date')))
@@ -59,7 +62,7 @@ class MemberController extends Controller
     }
 
     /**
-     * Form Tambah Anggota.
+     * Form tambah anggota baru.
      */
     public function create(): View
     {
@@ -67,28 +70,21 @@ class MemberController extends Controller
     }
 
     /**
-     * Simpan Anggota Baru.
+     * Menyimpan data anggota baru.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreMemberRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:members,email'],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:255'],
-        ]);
+        Member::create($request->validated());
 
-        Member::create($validated);
-
-        return redirect('/members')->with('success', 'Data anggota berhasil ditambahkan!');
+        return redirect()->route('members.index')
+            ->with('success', 'Data anggota berhasil ditambahkan!');
     }
 
     /**
-     * Detail Anggota (Beserta Riwayat Peminjamannya).
+     * Detail anggota beserta riwayat peminjamannya.
      */
-    public function show(int $id): View
+    public function show(Member $member): View
     {
-        $member = Member::findOrFail($id);
         $borrowings = Borrowing::with('book')
             ->where('member_id', $member->id)
             ->latest()
@@ -98,47 +94,37 @@ class MemberController extends Controller
     }
 
     /**
-     * Form Edit Anggota.
+     * Form edit data anggota.
      */
-    public function edit(int $id): View
+    public function edit(Member $member): View
     {
-        $member = Member::findOrFail($id);
-
         return view('members.edit', compact('member'));
     }
 
     /**
-     * Update Data Anggota.
+     * Memperbarui data anggota.
      */
-    public function update(Request $request, int $id): RedirectResponse
+    public function update(UpdateMemberRequest $request, Member $member): RedirectResponse
     {
-        $member = Member::findOrFail($id);
+        $member->update($request->validated());
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:members,email,'.$member->id],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'address' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $member->update($validated);
-
-        return redirect('/members')->with('success', 'Data anggota berhasil diperbarui!');
+        return redirect()->route('members.index')
+            ->with('success', 'Data anggota berhasil diperbarui!');
     }
 
     /**
-     * Hapus Anggota.
+     * Menghapus data anggota (ditolak jika masih memiliki peminjaman).
      */
-    public function destroy(int $id): RedirectResponse
+    public function destroy(Member $member): RedirectResponse
     {
-        $member = Member::findOrFail($id);
-
         if ($member->borrowings()->exists() || $member->finePayments()->exists()) {
-            return redirect('/members')->with('error', 'Anggota masih memiliki riwayat peminjaman atau pembayaran denda sehingga tidak dapat dihapus.');
+            return redirect()->route('members.index')
+                ->with('error', 'Anggota tidak dapat dihapus karena masih memiliki data peminjaman atau pembayaran denda.');
         }
 
         $member->delete();
 
-        return redirect('/members')->with('success', 'Data anggota berhasil dihapus!');
+        return redirect()->route('members.index')
+            ->with('success', 'Data anggota berhasil dihapus!');
     }
 }

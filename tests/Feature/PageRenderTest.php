@@ -19,7 +19,7 @@ it('merender seluruh halaman utama untuk semua role tanpa error', function () {
         'analytics.index', 'borrowings.create', 'books.create', 'members.create',
     ];
 
-    // Manajemen pengguna dan pengaturan sistem hanya untuk admin/superadmin.
+    // Manajemen pengguna dan pengaturan sistem hanya untuk admin.
     $halamanAdmin = ['users.index', 'users.create', 'settings.index'];
 
     $petugas = User::factory()->petugas()->create();
@@ -54,7 +54,7 @@ it('merender halaman staf dengan data lengkap', function () {
         $this->actingAs($petugas)->get(route($routeName))->assertOk();
     }
 
-    // Manajemen pengguna dan pengaturan sistem hanya untuk admin/superadmin.
+    // Manajemen pengguna dan pengaturan sistem hanya untuk admin.
     foreach (['users.index', 'settings.index'] as $routeName) {
         $this->actingAs(User::factory()->admin()->create())->get(route($routeName))->assertOk();
     }
