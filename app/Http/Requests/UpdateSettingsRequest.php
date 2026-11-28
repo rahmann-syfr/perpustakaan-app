@@ -23,9 +23,7 @@ class UpdateSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'denda_per_hari' => ['required', 'integer', 'min:0', 'max:1000000'],
             'maksimal_hari_pinjam' => ['required', 'integer', 'min:1', 'max:90'],
-            'denda_buku_hilang' => ['required', 'integer', 'min:0', 'max:10000000'],
             'nama_perpustakaan' => ['required', 'string', 'max:120'],
             'alamat_perpustakaan' => ['nullable', 'string', 'max:255'],
             'email_perpustakaan' => ['nullable', 'email', 'max:120'],
@@ -43,10 +41,8 @@ class UpdateSettingsRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'denda_per_hari.required' => 'Denda per hari wajib diisi.',
             'maksimal_hari_pinjam.required' => 'Maksimal durasi pinjam wajib diisi.',
             'maksimal_hari_pinjam.max' => 'Maksimal durasi pinjam maksimal 90 hari.',
-            'denda_buku_hilang.required' => 'Denda buku hilang wajib diisi.',
             'nama_perpustakaan.required' => 'Nama perpustakaan wajib diisi.',
             'email_perpustakaan.email' => 'Format email perpustakaan tidak valid.',
             'maksimal_buku_anggota.required' => 'Maksimal buku per anggota wajib diisi.',

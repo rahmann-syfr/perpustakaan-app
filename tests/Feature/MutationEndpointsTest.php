@@ -38,8 +38,6 @@ it('memperbarui pengaturan sistem dengan nilai valid', function () {
             'hari_pengingat' => 2,
             'maksimal_perpanjangan' => 3,
             'durasi_perpanjangan' => 10,
-            'denda_per_hari' => 3000,
-            'denda_buku_hilang' => 75000,
             'nama_perpustakaan' => 'PerpusApp Nusantara',
             'email_perpustakaan' => 'info@perpus.test',
         ])
@@ -74,7 +72,6 @@ it('menyimpan buku baru dengan data valid', function () {
             'published_year' => 2024,
             'category_id' => $category->id,
             'total_stock' => 3,
-            'fine_per_day' => 2000,
         ])
         ->assertRedirect(route('books.index'));
 

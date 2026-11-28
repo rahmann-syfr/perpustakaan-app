@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Borrowing extends Model
 {
@@ -66,11 +65,6 @@ class Borrowing extends Model
         return $this->belongsTo(Book::class);
     }
 
-    public function finePayments(): HasMany
-    {
-        return $this->hasMany(FinePayment::class);
-    }
-
     /**
      * Peminjaman yang masih aktif (buku belum dikembalikan).
      */
@@ -115,30 +109,6 @@ class Borrowing extends Model
     public function isActive(): bool
     {
         return $this->return_date === null && $this->status->isActive();
-    }
-
-    /**
-     * Total denda yang sudah dibayar untuk transaksi ini.
-     */
-    public function paidFine(): int
-    {
-        return (int) $this->finePayments()->sum('amount');
-    }
-
-    /**
-     * Sisa denda yang belum dibayar.
-     */
-    public function outstandingFine(): int
-    {
-        return max(0, (int) $this->fine_amount - $this->paidFine());
-    }
-
-    /**
-     * True jika sisa denda masih belum lunas.
-     */
-    public function hasOutstandingFine(): bool
-    {
-        return $this->outstandingFine() > 0;
     }
 
     /**

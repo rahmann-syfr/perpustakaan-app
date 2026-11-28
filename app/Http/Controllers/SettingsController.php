@@ -15,9 +15,7 @@ class SettingsController extends Controller
      * @var array<string, int|string>
      */
     private const DEFAULTS = [
-        'denda_per_hari' => 1000,
         'maksimal_hari_pinjam' => 7,
-        'denda_buku_hilang' => 50000,
         'maksimal_buku_anggota' => 3,
         'hari_pengingat' => 3,
         'nama_perpustakaan' => 'Perpustakaan Digital',

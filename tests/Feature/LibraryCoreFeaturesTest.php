@@ -1,8 +1,8 @@
 <?php
 
-use App\Enums\PaymentMethod;
+use App\Models\Book;
 use App\Models\Borrowing;
-use App\Models\FinePayment;
+use App\Models\Member;
 use App\Models\SystemSetting;
 use App\Models\User;
 
@@ -59,51 +59,33 @@ it('tamu tidak dapat memperpanjang peminjaman', function () {
     expect($borrowing->refresh()->extension_count)->toBe(0);
 });
 
-it('petugas dapat mencatat pembayaran denda', function () {
+it('pengembalian terlambat tetap menghitung fine_amount', function () {
     $petugas = User::factory()->petugas()->create();
-    $borrowing = Borrowing::factory()->create(['fine_amount' => 50000]);
+    $book = Book::factory()->create(['fine_per_day' => 2000, 'total_stock' => 2, 'available_stock' => 1]);
+    $borrowing = Borrowing::factory()->create([
+        'book_id' => $book->id,
+        'due_date' => now()->startOfDay()->subDays(3),
+    ]);
 
     $this->actingAs($petugas)
-        ->post(route('fines.store', $borrowing), [
-            'amount' => 20000,
-            'method' => PaymentMethod::Cash->value,
-            'reference' => 'TRX-001',
-        ])
-        ->assertRedirect();
+        ->post(route('borrowings.return', $borrowing), ['status' => 'returned'])
+        ->assertRedirect(route('borrowings.index'));
 
-    expect(FinePayment::query()->count())->toBe(1)
-        ->and($borrowing->refresh()->outstandingFine())->toBe(30000);
+    expect($borrowing->refresh()->fine_amount)->toBe(6000)
+        ->and($borrowing->late_days)->toBe(3);
 });
 
-it('menolak pembayaran yang melebihi sisa denda', function () {
+it('menolak penghapusan anggota yang masih memiliki peminjaman', function () {
     $petugas = User::factory()->petugas()->create();
-    $borrowing = Borrowing::factory()->create(['fine_amount' => 10000]);
+    $member = Member::factory()->create();
+    Borrowing::factory()->returned()->create(['member_id' => $member->id]);
 
     $this->actingAs($petugas)
-        ->post(route('fines.store', $borrowing), [
-            'amount' => 50000,
-            'method' => PaymentMethod::Cash->value,
-        ])
-        ->assertSessionHasErrors('amount');
+        ->delete(route('members.destroy', $member))
+        ->assertRedirect(route('members.index'))
+        ->assertSessionHas('error');
 
-    expect(FinePayment::query()->count())->toBe(0);
-});
-
-it('menolak pembayaran pada transaksi tanpa denda', function () {
-    $petugas = User::factory()->petugas()->create();
-    $borrowing = Borrowing::factory()->create(['fine_amount' => 0]);
-
-    $this->actingAs($petugas)
-        ->post(route('fines.store', $borrowing), [
-            'amount' => 10000,
-            'method' => PaymentMethod::Cash->value,
-        ])
-        ->assertSessionHasErrors('amount');
-});
-
-it('tamu tidak dapat mengakses halaman pembayaran denda', function () {
-    $this->get(route('fines.index'))
-        ->assertRedirect(route('login'));
+    $this->assertDatabaseHas('members', ['id' => $member->id]);
 });
 
 it('pengguna dapat memperbarui profilnya sendiri', function () {

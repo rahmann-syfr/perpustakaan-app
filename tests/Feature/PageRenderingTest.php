@@ -17,7 +17,7 @@ it('merender dashboard untuk petugas dengan 4 statistik wajib', function () {
         ->assertSee('Total Koleksi', false)
         ->assertSee('Jumlah Stok Buku', false)
         ->assertSee('Jumlah Member', false)
-        ->assertSee('Buku Dipinjam', false);
+        ->assertSee('Sedang Dipinjam', false);
 });
 
 it('merender halaman data buku beserta hasil pencarian', function () {
@@ -159,4 +159,18 @@ it('menampilkan label status enum dengan benar', function () {
         ->and(BorrowingStatus::Returned->label())->toBe('Dikembalikan')
         ->and(BorrowingStatus::Overdue->label())->toBe('Terlambat')
         ->and(BorrowingStatus::Lost->label())->toBe('Hilang');
+});
+
+it('memuat script scroll memory pada halaman layout', function () {
+    $petugas = User::factory()->petugas()->create();
+
+    $this->actingAs($petugas)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('id="scroll-memory"', false);
+
+    $this->actingAs($petugas)
+        ->get(route('books.index'))
+        ->assertOk()
+        ->assertSee('id="scroll-memory"', false);
 });

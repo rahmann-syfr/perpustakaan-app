@@ -117,9 +117,9 @@ class MemberController extends Controller
      */
     public function destroy(Member $member): RedirectResponse
     {
-        if ($member->borrowings()->exists() || $member->finePayments()->exists()) {
+        if ($member->borrowings()->exists()) {
             return redirect()->route('members.index')
-                ->with('error', 'Anggota tidak dapat dihapus karena masih memiliki data peminjaman atau pembayaran denda.');
+                ->with('error', 'Anggota tidak dapat dihapus karena masih memiliki data peminjaman.');
         }
 
         $member->delete();

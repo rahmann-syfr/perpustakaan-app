@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\Borrowing;
-use App\Models\FinePayment;
 use App\Models\Member;
 use Illuminate\View\View;
 
@@ -31,12 +30,6 @@ class DashboardController extends Controller
             ->take(200)
             ->get();
 
-        $dendaList = Borrowing::with(['member', 'book'])
-            ->where('fine_amount', '>', 0)
-            ->latest()
-            ->take(200)
-            ->get();
-
         $anggotaList = Member::query()
             ->latest()
             ->take(200)
@@ -59,8 +52,6 @@ class DashboardController extends Controller
             ->overdue()
             ->count();
 
-        $paidFineTotal = (int) FinePayment::query()->sum('amount');
-
         return view('dashboard', [
             'countBuku' => $countBuku,
             'countStokBuku' => $countStokBuku,
@@ -69,12 +60,9 @@ class DashboardController extends Controller
             'anggotaList' => $anggotaList,
             'countDipinjam' => $dipinjamList->count(),
             'dipinjamList' => $dipinjamList,
-            'sumDenda' => $dendaList->sum('fine_amount'),
-            'dendaList' => $dendaList,
             'recentActivities' => $recentActivities,
             'overdueBorrowings' => $overdueBorrowings,
             'overdueCount' => $overdueCount,
-            'paidFineTotal' => $paidFineTotal,
             'trendChart' => $this->trendChart(),
             'categoryChart' => $this->categoryChart(),
         ]);

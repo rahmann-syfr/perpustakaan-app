@@ -16,8 +16,6 @@ it('mengarahkan tamu ke halaman login untuk seluruh route terproteksi', function
     'buku' => ['books.index'],
     'anggota' => ['members.index'],
     'sirkulasi' => ['borrowings.index'],
-    'denda' => ['fines.index'],
-    'laporan' => ['analytics.index'],
     'user' => ['users.index'],
     'pengaturan' => ['settings.index'],
 ]);

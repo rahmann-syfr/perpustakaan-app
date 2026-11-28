@@ -55,9 +55,6 @@ function daftarHalamanGet(): array
         'dashboard' => ['dashboard', []],
         'profil' => ['profile.show', []],
         'buku show' => ['books.show', ['book']],
-        'laporan' => ['analytics.index', []],
-        'laporan 6 bulan' => ['analytics.index', []],
-        'laporan 12 bulan' => ['analytics.index', []],
         'pengaturan' => ['settings.index', []],
         'anggota' => ['members.index', []],
         'anggota cari' => ['members.index', []],
@@ -72,7 +69,6 @@ function daftarHalamanGet(): array
         'kategori edit' => ['categories.edit', ['category']],
         'sirkulasi' => ['borrowings.index', []],
         'sirkulasi form' => ['borrowings.create', []],
-        'denda' => ['fines.index', []],
         'pengguna' => ['users.index', []],
         'pengguna form' => ['users.create', []],
         'pengguna edit' => ['users.edit', ['user']],
@@ -167,23 +163,6 @@ it('merender daftar anggota dengan pencarian nama dan email', function () {
         ->assertDontSee('Budi Santoso');
 });
 
-it('merender analitik tanpa data transaksi sama sekali', function () {
-    $petugas = User::factory()->petugas()->create();
-
-    $this->actingAs($petugas)
-        ->get(route('analytics.index'))
-        ->assertOk()
-        ->assertSee('Belum ada data peminjaman.');
-});
-
-it('merender analitik dengan rentang bulan yang tidak valid tanpa error', function () {
-    $petugas = User::factory()->petugas()->create();
-
-    $this->actingAs($petugas)
-        ->get(route('analytics.index', ['range' => 99]))
-        ->assertOk();
-});
-
 it('merender pengaturan dengan nilai default saat belum pernah disimpan', function () {
     $admin = User::factory()->admin()->create();
 
@@ -234,9 +213,6 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
         'dashboard' => ['dashboard', [], []],
         'profil' => ['profile.show', [], []],
         'buku show' => ['books.show', ['book'], []],
-        'laporan' => ['analytics.index', [], []],
-        'laporan 6 bulan' => ['analytics.index', [], ['range' => 6]],
-        'laporan 12 bulan' => ['analytics.index', [], ['range' => 12]],
         'anggota' => ['members.index', [], []],
         'anggota cari' => ['members.index', [], ['search' => 'a']],
         'anggota status' => ['members.index', [], ['status' => 'terlambat']],
@@ -252,7 +228,6 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
     ]],
     'admin' => ['admin', [
         'dashboard' => ['dashboard', [], []],
-        'laporan' => ['analytics.index', [], []],
         'pengaturan' => ['settings.index', [], []],
         'anggota' => ['members.index', [], []],
         'pengguna' => ['users.index', [], []],
