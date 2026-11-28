@@ -8,7 +8,7 @@ class StoreBookRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role->isStaff() ?? false;
+        return $this->user() !== null;
     }
 
     /**
@@ -24,7 +24,6 @@ class StoreBookRequest extends FormRequest
             'isbn' => ['required', 'string', 'max:255', 'unique:books,isbn'],
             'published_year' => ['required', 'integer', 'min:1900', 'max:'.(now()->year + 1)],
             'total_stock' => ['required', 'integer', 'min:1', 'max:999'],
-            'fine_per_day' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'cover_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
     }
@@ -48,7 +47,6 @@ class StoreBookRequest extends FormRequest
             'total_stock.required' => 'Stok total wajib diisi.',
             'total_stock.min' => 'Stok total minimal 1 eksemplar.',
             'total_stock.max' => 'Stok total maksimal 999 eksemplar.',
-            'fine_per_day.min' => 'Denda per hari tidak boleh negatif.',
             'cover_image.image' => 'Sampul harus berupa gambar.',
             'cover_image.mimes' => 'Format sampul harus JPG, JPEG, PNG, atau WEBP.',
             'cover_image.max' => 'Ukuran sampul maksimal 2MB.',
@@ -64,7 +62,6 @@ class StoreBookRequest extends FormRequest
             'category_id' => 'kategori',
             'published_year' => 'tahun terbit',
             'total_stock' => 'stok total',
-            'fine_per_day' => 'denda per hari',
             'cover_image' => 'sampul buku',
         ];
     }

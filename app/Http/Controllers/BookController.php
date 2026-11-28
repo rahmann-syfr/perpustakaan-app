@@ -80,9 +80,7 @@ class BookController extends Controller
             'isbn' => $request->string('isbn')->toString(),
             'published_year' => $request->integer('published_year'),
             'total_stock' => $request->integer('total_stock'),
-            'fine_per_day' => $request->filled('fine_per_day')
-                ? $request->integer('fine_per_day')
-                : SystemSetting::getInt('denda_per_hari', 1000),
+            'fine_per_day' => SystemSetting::getInt('denda_per_hari', 1000),
             'cover_image' => $this->storeCoverImage($request),
         ]);
 

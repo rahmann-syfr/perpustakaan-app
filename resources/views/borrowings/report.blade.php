@@ -52,7 +52,7 @@
                 @php $totalDenda += $row->fine_amount; @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>{{ $row->user->name ?? '-' }}</td>
+                    <td>{{ $row->member->name ?? '-' }}</td>
                     <td>{{ $row->book->title ?? '-' }}</td>
                     <td class="text-center">{{ \Carbon\Carbon::parse($row->borrow_date)->format('d-m-Y') }}</td>
                     <td class="text-center">{{ \Carbon\Carbon::parse($row->due_date)->format('d-m-Y') }}</td>

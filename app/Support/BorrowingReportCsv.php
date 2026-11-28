@@ -36,8 +36,8 @@ class BorrowingReportCsv
         foreach ($borrowings as $index => $row) {
             fputcsv($handle, [
                 $index + 1,
-                $row->user->name ?? '-',
-                $row->user->email ?? '-',
+                $row->member->name ?? '-',
+                $row->member->email ?? '-',
                 $row->book->title ?? '-',
                 $row->borrow_date?->format('d-m-Y') ?? '-',
                 $row->due_date?->format('d-m-Y') ?? '-',

@@ -3,6 +3,7 @@
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
+use App\Models\SystemSetting;
 use App\Models\User;
 
 it('menyimpan buku baru dengan stok tersedia sama dengan stok total', function () {
@@ -116,4 +117,39 @@ it('mencari data buku berdasarkan kata kunci dan filter kategori', function () {
         ->get(route('books.index', ['category' => $sastra->id]))
         ->assertOk()
         ->assertViewHas('books', fn ($books) => $books->total() === 1);
+});
+
+it('form tambah buku tidak memuat input denda per hari', function () {
+    $petugas = User::factory()->petugas()->create();
+
+    $this->actingAs($petugas)
+        ->get(route('books.create'))
+        ->assertOk()
+        ->assertDontSee('Denda per Hari', false)
+        ->assertDontSee('name="fine_per_day"', false);
+});
+
+it('menyimpan buku baru tanpa fine_per_day menggunakan default pengaturan sistem', function () {
+    SystemSetting::set('denda_per_hari', 3500);
+
+    $petugas = User::factory()->petugas()->create();
+    $category = Category::factory()->create();
+
+    $this->actingAs($petugas)
+        ->post(route('books.store'), [
+            'title' => 'Buku Default Denda',
+            'author' => 'Penulis Uji',
+            'isbn' => '978-602-999-001',
+            'published_year' => 2025,
+            'category_id' => $category->id,
+            'total_stock' => 4,
+        ])
+        ->assertRedirect(route('books.index'));
+
+    $this->assertDatabaseHas('books', [
+        'isbn' => '978-602-999-001',
+        'fine_per_day' => 3500,
+    ]);
+
+    SystemSetting::flush();
 });

@@ -4,30 +4,20 @@ use App\Enums\BorrowingStatus;
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
+use App\Models\Member;
 use App\Models\User;
 
-it('merender dashboard untuk anggota tanpa membocorkan daftar anggota lain', function () {
-    $anggota = User::factory()->anggota()->create();
-    $anggotaLain = User::factory()->anggota()->create(['name' => 'Rahasia Member']);
-
-    Borrowing::factory()->create(['user_id' => $anggota->id]);
-    Borrowing::factory()->create(['user_id' => $anggotaLain->id]);
-
-    $this->actingAs($anggota)
-        ->get(route('dashboard'))
-        ->assertOk()
-        ->assertDontSee('Rahasia Member');
-});
-
-it('merender dashboard untuk petugas tanpa kartu statistik anggota', function () {
+it('merender dashboard untuk petugas dengan 4 statistik wajib', function () {
     $petugas = User::factory()->petugas()->create();
-    User::factory()->anggota()->create(['name' => 'Budi Santoso']);
+    Member::factory()->create(['name' => 'Budi Santoso']);
 
     $this->actingAs($petugas)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertDontSee('Total Anggota', false)
-        ->assertDontSee('Budi Santoso', false);
+        ->assertSee('Total Koleksi', false)
+        ->assertSee('Jumlah Stok Buku', false)
+        ->assertSee('Jumlah Member', false)
+        ->assertSee('Sedang Dipinjam', false);
 });
 
 it('merender halaman data buku beserta hasil pencarian', function () {
@@ -60,14 +50,14 @@ it('menolak nama kategori yang duplikat', function () {
 });
 
 it('merender form tambah dan edit user', function () {
-    $superadmin = User::factory()->superadmin()->create();
-    $target = User::factory()->anggota()->create();
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->petugas()->create();
 
-    $this->actingAs($superadmin)
+    $this->actingAs($admin)
         ->get(route('users.create'))
         ->assertOk();
 
-    $this->actingAs($superadmin)
+    $this->actingAs($admin)
         ->get(route('users.edit', $target))
         ->assertOk();
 });
@@ -169,4 +159,18 @@ it('menampilkan label status enum dengan benar', function () {
         ->and(BorrowingStatus::Returned->label())->toBe('Dikembalikan')
         ->and(BorrowingStatus::Overdue->label())->toBe('Terlambat')
         ->and(BorrowingStatus::Lost->label())->toBe('Hilang');
+});
+
+it('memuat script scroll memory pada halaman layout', function () {
+    $petugas = User::factory()->petugas()->create();
+
+    $this->actingAs($petugas)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('id="scroll-memory"', false);
+
+    $this->actingAs($petugas)
+        ->get(route('books.index'))
+        ->assertOk()
+        ->assertSee('id="scroll-memory"', false);
 });

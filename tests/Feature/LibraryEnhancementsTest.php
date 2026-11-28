@@ -16,10 +16,10 @@ it('mengekspor csv laporan sirkulasi', function () {
 });
 
 it('dashboard memuat aktivitas terbaru', function () {
-    $anggota = User::factory()->anggota()->create();
-    Borrowing::factory()->create(['user_id' => $anggota->id, 'admin_id' => null]);
+    $petugas = User::factory()->petugas()->create();
+    Borrowing::factory()->create(['admin_id' => $petugas->id]);
 
-    $this->actingAs($anggota)
+    $this->actingAs($petugas)
         ->get(route('dashboard'))
         ->assertOk()
         ->assertViewHas('recentActivities', fn ($items) => $items->count() === 1);

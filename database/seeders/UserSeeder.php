@@ -15,11 +15,6 @@ class UserSeeder extends Seeder
     {
         $users = [
             [
-                'name' => 'Superadmin Perpus',
-                'email' => 'superadmin@perpus.com',
-                'role' => Role::Superadmin->value,
-            ],
-            [
                 'name' => 'Admin Perpustakaan',
                 'email' => 'admin@perpus.com',
                 'role' => Role::Admin->value,
@@ -28,11 +23,6 @@ class UserSeeder extends Seeder
                 'name' => 'Petugas Perpustakaan',
                 'email' => 'petugas@perpus.com',
                 'role' => Role::Petugas->value,
-            ],
-            [
-                'name' => 'Anggota Perpustakaan',
-                'email' => 'anggota@perpus.com',
-                'role' => Role::Anggota->value,
             ],
         ];
 

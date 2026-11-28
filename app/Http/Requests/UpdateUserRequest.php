@@ -59,20 +59,14 @@ class UpdateUserRequest extends FormRequest
                 return;
             }
 
-            if ($target->role === Role::Superadmin && $actor->role !== Role::Superadmin) {
-                $validator->errors()->add('role', 'Hanya Superadmin yang dapat mengubah akun Superadmin.');
-
-                return;
-            }
-
-            $isLastSuperadmin = User::query()
-                ->where('role', Role::Superadmin->value)
+            $isLastAdmin = User::query()
+                ->where('role', Role::Admin->value)
                 ->count() <= 1;
 
-            if ($target->role === Role::Superadmin
-                && $newRole !== Role::Superadmin->value
-                && $isLastSuperadmin) {
-                $validator->errors()->add('role', 'Tidak dapat menurunkan role karena Anda adalah satu-satunya Superadmin.');
+            if ($target->role === Role::Admin
+                && $newRole !== Role::Admin->value
+                && $isLastAdmin) {
+                $validator->errors()->add('role', 'Tidak dapat menurunkan role karena ini adalah satu-satunya Admin.');
             }
         });
     }
