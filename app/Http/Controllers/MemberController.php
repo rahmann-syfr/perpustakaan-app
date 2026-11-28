@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
+use App\Http\Requests\StoreMemberRequest;
+use App\Http\Requests\UpdateMemberRequest;
 use App\Models\Borrowing;
-use App\Models\User;
+use App\Models\Member;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class MemberController extends Controller
@@ -24,18 +25,14 @@ class MemberController extends Controller
         $search = trim((string) ($filters['search'] ?? ''));
         $status = $filters['status'] ?? null;
 
-        // Catatan: scope `active()` hanya tersedia pada Eloquent Builder.
-        // Karena itu relasi peminjaman dimuat terlebih dahulu (eager load)
-        // lalu difilter di level Collection agar tidak memanggil method
-        // yang tidak ada pada Query\Builder di dalam closure relasi.
-        $members = User::query()
-            ->where('role', Role::Anggota->value)
+        $members = Member::query()
             ->with(['borrowings' => fn ($query) => $query->active()])
             ->withCount(['borrowings as active_borrowings_count' => fn ($query) => $query->active()])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($query) use ($search): void {
                     $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
                 });
             })
             ->when($status === 'aktif', fn ($query) => $query->whereHas('borrowings', fn ($query) => $query->whereNull('return_date')))
@@ -50,98 +47,84 @@ class MemberController extends Controller
             ->withQueryString();
 
         $summary = [
-            'total' => User::query()->where('role', Role::Anggota->value)->count(),
+            'total' => Member::query()->count(),
             'active' => Borrowing::query()
-                ->whereHas('user', fn ($query) => $query->where('role', Role::Anggota->value))
                 ->active()
-                ->distinct('user_id')
-                ->count('user_id'),
+                ->distinct('member_id')
+                ->count('member_id'),
             'overdue' => Borrowing::query()
-                ->whereHas('user', fn ($query) => $query->where('role', Role::Anggota->value))
                 ->overdue()
-                ->distinct('user_id')
-                ->count('user_id'),
+                ->distinct('member_id')
+                ->count('member_id'),
         ];
 
         return view('members.index', compact('members', 'summary'));
     }
 
-    // Form Tambah Anggota
-    public function create()
+    /**
+     * Form tambah anggota baru.
+     */
+    public function create(): View
     {
         return view('members.create');
     }
 
-    // Simpan Anggota Baru
-    public function store(Request $request)
+    /**
+     * Menyimpan data anggota baru.
+     */
+    public function store(StoreMemberRequest $request): RedirectResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-        ]);
+        Member::create($request->validated());
 
-        User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'anggota', // Otomatis dikunci sebagai anggota
-        ]);
-
-        return redirect('/members')->with('success', 'Data anggota berhasil ditambahkan!');
+        return redirect()->route('members.index')
+            ->with('success', 'Data anggota berhasil ditambahkan!');
     }
 
-    // Detail Anggota (Beserta Riwayat Peminjamannya)
-    public function show($id)
+    /**
+     * Detail anggota beserta riwayat peminjamannya.
+     */
+    public function show(Member $member): View
     {
-        $member = User::where('role', 'anggota')->findOrFail($id);
         $borrowings = Borrowing::with('book')
-            ->where('user_id', $member->id)
+            ->where('member_id', $member->id)
             ->latest()
             ->get();
 
         return view('members.show', compact('member', 'borrowings'));
     }
 
-    // Form Edit Anggota
-    public function edit($id)
+    /**
+     * Form edit data anggota.
+     */
+    public function edit(Member $member): View
     {
-        $member = User::where('role', 'anggota')->findOrFail($id);
-
         return view('members.edit', compact('member'));
     }
 
-    // Update Data Anggota
-    public function update(Request $request, $id)
+    /**
+     * Memperbarui data anggota.
+     */
+    public function update(UpdateMemberRequest $request, Member $member): RedirectResponse
     {
-        $member = User::where('role', 'anggota')->findOrFail($id);
+        $member->update($request->validated());
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$member->id,
-            'password' => 'nullable|string|min:6',
-        ]);
-
-        $data = [
-            'name' => $request->name,
-            'email' => $request->email,
-        ];
-
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
-        }
-
-        $member->update($data);
-
-        return redirect('/members')->with('success', 'Data anggota berhasil diperbarui!');
+        return redirect()->route('members.index')
+            ->with('success', 'Data anggota berhasil diperbarui!');
     }
 
-    // Hapus Anggota
-    public function destroy($id)
+    /**
+     * Menghapus data anggota (ditolak jika masih memiliki peminjaman).
+     */
+    public function destroy(Member $member): RedirectResponse
     {
-        $member = User::where('role', 'anggota')->findOrFail($id);
+        if ($member->borrowings()->exists()) {
+            return redirect()->route('members.index')
+                ->with('error', 'Anggota tidak dapat dihapus karena masih memiliki data peminjaman.');
+        }
+
         $member->delete();
 
-        return redirect('/members')->with('success', 'Data anggota berhasil dihapus!');
+        return redirect()->route('members.index')
+            ->with('success', 'Data anggota berhasil dihapus!');
     }
 }

@@ -6,14 +6,13 @@ use App\Actions\BorrowBook;
 use App\Actions\ExtendBorrowing;
 use App\Actions\ReturnBook;
 use App\Enums\BorrowingStatus;
-use App\Enums\Role;
 use App\Http\Requests\ExtendBorrowingRequest;
 use App\Http\Requests\ReturnBorrowingRequest;
 use App\Http\Requests\StoreBorrowingRequest;
 use App\Models\Book;
 use App\Models\Borrowing;
+use App\Models\Member;
 use App\Models\SystemSetting;
-use App\Models\User;
 use App\Queries\BorrowingFilter;
 use App\Support\BorrowingReportCsv;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -35,7 +34,7 @@ class BorrowingController extends Controller
         $filters = $this->validateFilters($request);
 
         $borrowings = BorrowingFilter::make($filters)
-            ->apply(Borrowing::with(['user', 'admin', 'book'])->latest())
+            ->apply(Borrowing::with(['member', 'admin', 'book'])->latest())
             ->paginate(15)
             ->withQueryString();
 
@@ -70,8 +69,7 @@ class BorrowingController extends Controller
      */
     public function create(): View
     {
-        $members = User::query()
-            ->where('role', Role::Anggota->value)
+        $members = Member::query()
             ->orderBy('name')
             ->get();
 
@@ -91,7 +89,7 @@ class BorrowingController extends Controller
     public function store(StoreBorrowingRequest $request, BorrowBook $borrowBook): RedirectResponse
     {
         $borrowBook->handle([
-            'user_id' => $request->integer('user_id'),
+            'member_id' => $request->integer('member_id'),
             'book_id' => $request->integer('book_id'),
             'duration_days' => $request->integer('duration_days'),
         ], $request->user()->id);
@@ -132,14 +130,16 @@ class BorrowingController extends Controller
         Borrowing $borrowing,
         ExtendBorrowing $extendBorrowing
     ): RedirectResponse {
+        $days = $request->integer('days');
+
         try {
-            $updated = $extendBorrowing->handle($borrowing, $request->user()->id);
+            $updated = $extendBorrowing->handle($borrowing, $request->user()->id, $days);
         } catch (ValidationException $exception) {
             return back()->withErrors($exception->errors());
         }
 
         return redirect()->route('borrowings.index')
-            ->with('success', 'Peminjaman diperpanjang sampai '.$updated->due_date?->format('d M Y').'.');
+            ->with('success', 'Peminjaman diperpanjang '.$days.' hari sampai '.$updated->due_date?->format('d M Y').'.');
     }
 
     /**
@@ -150,7 +150,7 @@ class BorrowingController extends Controller
         $filters = $this->validateFilters($request);
 
         $borrowings = BorrowingFilter::make($filters)
-            ->apply(Borrowing::with(['user', 'admin', 'book'])->orderByDesc('borrow_date'))
+            ->apply(Borrowing::with(['member', 'admin', 'book'])->orderByDesc('borrow_date'))
             ->get();
 
         $pdf = Pdf::loadView('borrowings.report', compact('borrowings', 'filters'));
@@ -167,7 +167,7 @@ class BorrowingController extends Controller
         $filters = $this->validateFilters($request);
 
         $borrowings = BorrowingFilter::make($filters)
-            ->apply(Borrowing::with(['user', 'admin', 'book'])->orderByDesc('borrow_date'))
+            ->apply(Borrowing::with(['member', 'admin', 'book'])->orderByDesc('borrow_date'))
             ->get();
 
         $filename = 'laporan-sirkulasi-'.now()->format('Y-m-d-His').'.csv';

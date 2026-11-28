@@ -103,19 +103,6 @@
                             @error('total_stock')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Denda per Hari (Rp)</label>
-                            <input type="number"
-                                   name="fine_per_day"
-                                   class="form-control @error('fine_per_day') is-invalid @enderror"
-                                   placeholder="Contoh: 1000"
-                                   value="{{ old('fine_per_day') }}"
-                                   min="0"
-                                   max="1000000">
-                            <small class="text-muted">Kosongkan untuk memakai denda default sistem.</small>
-                            @error('fine_per_day')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Cover Buku (Opsional)</label>
                             <div class="d-flex flex-column flex-sm-row align-items-start gap-3 p-3 border rounded bg-light">

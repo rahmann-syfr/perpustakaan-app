@@ -6,22 +6,18 @@
 @section('content')
 @php
     $currentUser = Auth::user();
-    $isStaff = $currentUser->role->isStaff();
-    $canViewMemberStats = $canViewMemberStats ?? $currentUser->role->canManageUsers();
 
     // Seluruh data statistik & rincian modal sudah disiapkan oleh
     // DashboardController agar query tidak terduplikasi di layer view.
     $booksList = $booksList ?? collect();
     $anggotaList = $anggotaList ?? collect();
     $dipinjamList = $dipinjamList ?? collect();
-    $dendaList = $dendaList ?? collect();
 
     $countBuku = $countBuku ?? $booksList->count();
+    $countStokBuku = $countStokBuku ?? $booksList->sum('total_stock');
     $countAnggota = $countAnggota ?? $anggotaList->count();
     $countDipinjam = $countDipinjam ?? $dipinjamList->count();
-    $sumDenda = $sumDenda ?? $dendaList->sum('fine_amount');
 
-    $pinjamanAktifSaya = $pinjamanAktifSaya ?? $dipinjamList->count();
     $recentActivities = $recentActivities ?? collect();
     $overdueBorrowings = $overdueBorrowings ?? collect();
     $overdueCount = $overdueCount ?? 0;
@@ -43,25 +39,20 @@
                                 <div>
                                     <h4 class="mb-1 fw-bold">Selamat datang kembali, {{ $currentUser->name }}!</h4>
                                     <p class="mb-0 text-muted">
-                                        Anda login sebagai 
+                                        Anda login sebagai
                                         <span class="badge bg-light-primary text-primary fw-semibold">{{ $currentUser->role->label() }}</span>
-                                        @if(!$isStaff)
-                                            &bull; Sedang meminjam <strong class="text-dark">{{ $pinjamanAktifSaya }} Buku</strong>
-                                        @endif
                                     </p>
                                 </div>
                             </div>
 
-                            <!-- Aksi Cepat Sesuai Role -->
+                            <!-- Aksi Cepat -->
                             <div class="d-flex flex-wrap gap-2">
-                                @if($isStaff)
-                                    <a href="{{ route('borrowings.index') }}" class="btn btn-primary">
-                                        <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
-                                    </a>
-                                    <a href="{{ route('books.index') }}" class="btn btn-outline-primary">
-                                        <i class="bi bi-book-half me-1"></i> Data Buku
-                                    </a>
-                                @endif
+                                <a href="{{ route('borrowings.index') }}" class="btn btn-primary">
+                                    <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
+                                </a>
+                                <a href="{{ route('books.index') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-book-half me-1"></i> Data Buku
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -96,8 +87,32 @@
                 </div>
             </div>
 
-            @if($canViewMemberStats)
-            <!-- 2. Total Anggota -->
+            <!-- 2. Jumlah Stok Buku -->
+            <div class="col-6 col-lg-3 col-md-6">
+                <div class="card card-stat card-clickable h-100 mb-0"
+                     data-bs-toggle="modal"
+                     data-bs-target="#koleksiBukuModal"
+                     title="Klik untuk melihat rincian stok buku">
+                    <div class="card-body px-4 py-4-5">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
+                                <div class="stats-icon purple mb-2">
+                                    <i class="bi bi-boxes"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
+                                <h6 class="text-muted font-semibold mb-1">Jumlah Stok Buku</h6>
+                                <h5 class="font-extrabold mb-1">{{ $countStokBuku }}</h5>
+                                <span class="text-primary fw-semibold" style="font-size: 0.72rem;">
+                                    <i class="bi bi-eye me-1"></i>Total eksemplar
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Jumlah Member -->
             <div class="col-6 col-lg-3 col-md-6">
                 <div class="card card-stat card-clickable h-100 mb-0"
                      data-bs-toggle="modal"
@@ -111,19 +126,18 @@
                                 </div>
                             </div>
                             <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Total Anggota</h6>
+                                <h6 class="text-muted font-semibold mb-1">Jumlah Member</h6>
                                 <h5 class="font-extrabold mb-1">{{ $countAnggota }}</h5>
                                 <span class="text-info fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-eye me-1"></i>Khusus peminjam
+                                    <i class="bi bi-eye me-1"></i>Lihat anggota
                                 </span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            @endif
             
-            <!-- 3. Buku Dipinjam -->
+            <!-- 4. Sedang Dipinjam -->
             <div class="col-6 col-lg-3 col-md-6">
                 <div class="card card-stat card-clickable h-100 mb-0"
                      data-bs-toggle="modal"
@@ -137,57 +151,8 @@
                                 </div>
                             </div>
                             <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Buku Dipinjam</h6>
+                                <h6 class="text-muted font-semibold mb-1">Sedang Dipinjam</h6>
                                 <h5 class="font-extrabold mb-1">{{ $countDipinjam }}</h5>
-                                <span class="text-success fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-eye me-1"></i>Lihat rincian
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Total Denda -->
-            <div class="col-6 col-lg-3 col-md-6">
-                <div class="card card-stat card-clickable h-100 mb-0"
-                     data-bs-toggle="modal"
-                     data-bs-target="#totalDendaModal"
-                     title="Klik untuk melihat rincian transaksi denda">
-                    <div class="card-body px-4 py-4-5">
-                        <div class="row align-items-center">
-                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
-                                <div class="stats-icon red mb-2">
-                                    <i class="bi bi-cash-stack"></i>
-                                </div>
-                            </div>
-                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Total Denda</h6>
-                                <h5 class="font-extrabold mb-1">Rp{{ number_format($sumDenda, 0, ',', '.') }}</h5>
-                                <span class="text-danger fw-semibold" style="font-size: 0.72rem;">
-                                    <i class="bi bi-eye me-1"></i>Lihat rincian
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- 5. Denda Terbayar -->
-            <div class="col-6 col-lg-3 col-md-6">
-                <div class="card card-stat card-clickable h-100 mb-0"
-                     data-bs-toggle="modal"
-                     data-bs-target="#totalDendaModal"
-                     title="Klik untuk melihat rincian transaksi denda">
-                    <div class="card-body px-4 py-4-5">
-                        <div class="row align-items-center">
-                            <div class="col-md-4 col-lg-12 col-xl-12 col-xxl-5 d-flex justify-content-start">
-                                <div class="stats-icon green mb-2">
-                                    <i class="bi bi-check-circle"></i>
-                                </div>
-                            </div>
-                            <div class="col-md-8 col-lg-12 col-xl-12 col-xxl-7">
-                                <h6 class="text-muted font-semibold mb-1">Denda Terbayar</h6>
-                                <h5 class="font-extrabold mb-1">Rp{{ number_format($paidFineTotal ?? 0, 0, ',', '.') }}</h5>
                                 <span class="text-success fw-semibold" style="font-size: 0.72rem;">
                                     <i class="bi bi-eye me-1"></i>Lihat rincian
                                 </span>
@@ -266,9 +231,7 @@
                                                 {{ $activity->book->title ?? 'Buku dihapus' }}
                                             </div>
                                             <small class="text-muted">
-                                                @if($isStaff)
-                                                    {{ $activity->user->name ?? 'Anggota' }} &bull;
-                                                @endif
+                                                {{ $activity->member->name ?? 'Anggota' }} &bull;
                                                 {{ $activity->created_at->diffForHumans() }}
                                             </small>
                                         </div>
@@ -294,9 +257,7 @@
                             <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
                                 <div>
                                     <div class="fw-semibold">{{ $item->book->title ?? '-' }}</div>
-                                    @if($isStaff)
-                                        <small class="text-muted">{{ $item->user->name ?? '-' }}</small>
-                                    @endif
+                                    <small class="text-muted">{{ $item->member->name ?? '-' }}</small>
                                     <small class="text-danger d-block">Tenggat {{ $item->due_date?->format('d M Y') }}</small>
                                 </div>
                                 <i class="bi bi-exclamation-triangle text-danger"></i>
@@ -450,7 +411,6 @@
     </div>
 </div>
 
-@if($canViewMemberStats)
 <!-- 2. Modal Rincian Total Anggota -->
 <div class="modal fade" id="anggotaModal" tabindex="-1" aria-labelledby="anggotaModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
@@ -474,9 +434,7 @@
                             <tr>
                                 <th style="width: 55px;">No</th>
                                 <th>Nama Anggota</th>
-                                @if($isStaff)
-                                    <th>Email</th>
-                                @endif
+                                <th>Email</th>
                                 <th class="text-center" style="width: 140px;">Tgl Terdaftar</th>
                             </tr>
                         </thead>
@@ -494,16 +452,14 @@
                                         <span class="fw-semibold text-dark">{{ $anggota->name }}</span>
                                     </div>
                                 </td>
-                                @if($isStaff)
-                                    <td class="text-muted">{{ $anggota->email }}</td>
-                                @endif
+                                <td class="text-muted">{{ $anggota->email }}</td>
                                 <td class="text-center text-muted">
                                     {{ \Carbon\Carbon::parse($anggota->created_at)->format('d M Y') }}
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="{{ $isStaff ? 4 : 3 }}" class="text-center text-muted py-4">Belum ada anggota terdaftar.</td>
+                                <td colspan="4" class="text-center text-muted py-4">Belum ada anggota terdaftar.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -511,17 +467,14 @@
                 </div>
             </div>
             <div class="modal-footer">
-                @if($currentUser->role->canManageUsers())
-                    <a href="{{ route('users.index') }}" class="btn btn-info text-white btn-sm">
-                        <i class="bi bi-people me-1"></i> Manajemen User
-                    </a>
-                @endif
+                <a href="{{ route('members.index') }}" class="btn btn-info text-white btn-sm">
+                    <i class="bi bi-people me-1"></i> Data Anggota
+                </a>
                 <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
     </div>
 </div>
-@endif
 
 <!-- 3. Modal Rincian Buku Sedang Dipinjam -->
 <div class="modal fade" id="bukuDipinjamModal" tabindex="-1" aria-labelledby="bukuDipinjamModalLabel" aria-hidden="true">
@@ -561,7 +514,7 @@
                             <tr>
                                 <td class="text-muted">{{ $index + 1 }}</td>
                                 <td class="fw-semibold text-dark">{{ $pinjam->book->title ?? 'Buku Dihapus' }}</td>
-                                <td>{{ $pinjam->user->name ?? 'User Dihapus' }}</td>
+                                <td>{{ $pinjam->member->name ?? 'Anggota Dihapus' }}</td>
                                 <td class="text-center">{{ \Carbon\Carbon::parse($pinjam->borrow_date)->format('d M Y') }}</td>
                                 <td class="text-center">
                                     <span class="{{ $isLate ? 'text-danger fw-bold' : '' }}">
@@ -590,79 +543,6 @@
                     <i class="bi bi-arrow-left-right me-1"></i> Kelola Sirkulasi
                 </a>
                 <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 4. Modal Rincian Total Denda -->
-<div class="modal fade" id="totalDendaModal" tabindex="-1" aria-labelledby="totalDendaModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title text-white" id="totalDendaModalLabel">
-                    <i class="bi bi-cash-stack me-2"></i>Rincian Transaksi Terkena Denda
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-3">
-                    <div class="input-group">
-                        <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
-                        <input type="text" class="form-control modal-table-search" data-target-table="tableModalDenda" placeholder="Filter judul buku atau nama peminjam...">
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="tableModalDenda">
-                        <thead class="table-light">
-                            <tr>
-                                <th style="width: 55px;">No</th>
-                                <th>Judul Buku</th>
-                                <th>Peminjam</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-end">Nominal Denda</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($dendaList as $index => $denda)
-                            <tr>
-                                <td class="text-muted">{{ $index + 1 }}</td>
-                                <td class="fw-semibold text-dark">{{ $denda->book->title ?? 'Buku Dihapus' }}</td>
-                                <td>{{ $denda->user->name ?? 'User Dihapus' }}</td>
-                                <td class="text-center">
-                                    @if($denda->status === \App\Enums\BorrowingStatus::Returned)
-                                        <span class="badge bg-light-success text-success">Dikembalikan</span>
-                                    @elseif($denda->status === \App\Enums\BorrowingStatus::Lost)
-                                        <span class="badge bg-light-dark text-dark">Hilang</span>
-                                    @else
-                                        <span class="badge bg-light-danger text-danger">Terlambat</span>
-                                    @endif
-                                </td>
-                                <td class="text-end">
-                                    <span class="badge bg-light-danger text-danger fw-bold">
-                                        Rp{{ number_format($denda->fine_amount, 0, ',', '.') }}
-                                    </span>
-                                </td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-4">Belum ada catatan denda keterlambatan.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer justify-content-between">
-                <div class="fw-bold text-danger">
-                    Total Akumulasi: Rp{{ number_format($sumDenda, 0, ',', '.') }}
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('borrowings.index') }}" class="btn btn-danger btn-sm">
-                        <i class="bi bi-file-earmark-text me-1"></i> Lihat Sirkulasi
-                    </a>
-                    <button type="button" class="btn btn-light-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-                </div>
             </div>
         </div>
     </div>

@@ -12,7 +12,7 @@
                     <h4 class="card-title mb-1">Daftar Kategori Buku</h4>
                     <p class="text-muted small mb-0">Kelola pengelompokan koleksi buku perpustakaan.</p>
                 </div>
-                @if(auth()->user()->role === 'admin')
+                @if(auth()->user()->role === \App\Enums\Role::Admin)
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
                         <i class="bi bi-plus-lg me-1"></i> Tambah Kategori
                     </button>
@@ -39,7 +39,7 @@
                             <tr>
                                 <th style="width: 65px;">No</th>
                                 <th>Nama Kategori</th>
-                                @if(auth()->user()->role === 'admin')
+                                @if(auth()->user()->role === \App\Enums\Role::Admin)
                                     <th class="text-center" style="width: 180px;">Aksi</th>
                                 @endif
                             </tr>
@@ -54,7 +54,7 @@
                                         </span>
                                         <strong class="text-dark">{{ $category->name }}</strong>
                                     </td>
-                                    @if(auth()->user()->role === 'admin')
+                                    @if(auth()->user()->role === \App\Enums\Role::Admin)
                                         <td class="text-center">
                                             <div class="table-action-buttons justify-content-center">
                                                 <button type="button"
@@ -80,10 +80,10 @@
 
                             @if($categories->isEmpty())
                                 @include('partials.empty-row', [
-                                    'colspan' => auth()->user()->role === 'admin' ? 3 : 2,
+                                    'colspan' => auth()->user()->role === \App\Enums\Role::Admin ? 3 : 2,
                                     'icon' => 'bi-tags',
                                     'title' => 'Belum Ada Kategori',
-                                    'text' => auth()->user()->role === 'admin'
+                                    'text' => auth()->user()->role === \App\Enums\Role::Admin
                                         ? 'Tambahkan kategori pertama untuk mulai mengelompokkan koleksi buku.'
                                         : 'Belum ada data kategori buku yang tersedia.',
                                 ])
@@ -114,7 +114,7 @@
 
 @include('partials.table-search-script')
 
-@if(auth()->user()->role === 'admin')
+@if(auth()->user()->role === \App\Enums\Role::Admin)
 @push('modals')
 <!-- Modal Tambah Kategori -->
 <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">

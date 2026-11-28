@@ -15,12 +15,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Membuat akun untuk setiap role.
+        // 1. Membuat akun staf (Admin & Petugas).
         $users = [
-            ['name' => 'Superadmin Perpus', 'email' => 'superadmin@perpus.com', 'role' => Role::Superadmin->value],
             ['name' => 'Admin Perpustakaan', 'email' => 'admin@perpus.com', 'role' => Role::Admin->value],
             ['name' => 'Petugas Perpustakaan', 'email' => 'petugas@perpus.com', 'role' => Role::Petugas->value],
-            ['name' => 'Anggota Perpustakaan', 'email' => 'anggota@perpus.com', 'role' => Role::Anggota->value],
         ];
 
         foreach ($users as $user) {
@@ -56,5 +54,9 @@ class DatabaseSeeder extends Seeder
         }
 
         SystemSetting::flush();
+
+        $this->call([
+            MemberSeeder::class,
+        ]);
     }
 }

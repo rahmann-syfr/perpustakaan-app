@@ -59,7 +59,7 @@ class BorrowingFilter
 
         if ($search !== '') {
             $query->where(function (Builder $query) use ($search): void {
-                $query->whereHas('user', fn (Builder $users) => $users->where('name', 'like', "%{$search}%"))
+                $query->whereHas('member', fn (Builder $members) => $members->where('name', 'like', "%{$search}%"))
                     ->orWhereHas('book', fn (Builder $books) => $books->where('title', 'like', "%{$search}%"));
             });
         }

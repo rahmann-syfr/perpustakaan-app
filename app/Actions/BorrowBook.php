@@ -17,7 +17,7 @@ class BorrowBook
      * Stok buku dikunci (lockForUpdate) agar dua petugas tidak bisa
      * meminjam buku yang sama pada waktu bersamaan.
      *
-     * @param  array{user_id: int, book_id: int, duration_days: int}  $data
+     * @param  array{member_id: int, book_id: int, duration_days: int}  $data
      */
     public function handle(array $data, ?int $adminId = null): Borrowing
     {
@@ -39,7 +39,7 @@ class BorrowBook
             // Batas jumlah buku aktif per anggota diatur dari halaman pengaturan.
             $maxBooks = SystemSetting::getInt('maksimal_buku_anggota', 3);
             $activeCount = Borrowing::query()
-                ->where('user_id', $data['user_id'])
+                ->where('member_id', $data['member_id'])
                 ->active()
                 ->count();
 
@@ -50,7 +50,7 @@ class BorrowBook
             }
 
             $borrowing = Borrowing::create([
-                'user_id' => $data['user_id'],
+                'member_id' => $data['member_id'],
                 'admin_id' => $adminId,
                 'book_id' => $book->id,
                 'borrow_date' => $borrowDate,

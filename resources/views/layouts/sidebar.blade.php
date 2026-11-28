@@ -50,7 +50,6 @@
                     </a>
                 </li>
 
-                @if($user->role->isStaff())
                 <li class="perpus-nav-label">Layanan & Koleksi</li>
 
                 <li class="perpus-nav-item {{ Request::is('categories*') ? 'active' : '' }}">
@@ -80,21 +79,6 @@
                         <span>Sirkulasi</span>
                     </a>
                 </li>
-
-                <li class="perpus-nav-item {{ Request::is('denda*') ? 'active' : '' }}">
-                    <a href="{{ route('fines.index') }}" class="perpus-nav-link">
-                        <i class="bi bi-cash-coin-fill"></i>
-                        <span>Pembayaran Denda</span>
-                    </a>
-                </li>
-
-                <li class="perpus-nav-item {{ Request::is('laporan*') ? 'active' : '' }}">
-                    <a href="{{ route('analytics.index') }}" class="perpus-nav-link">
-                        <i class="bi bi-graph-up-arrow"></i>
-                        <span>Laporan & Analitik</span>
-                    </a>
-                </li>
-                @endif
 
                 @if($user->role->canManageUsers())
                 <li class="perpus-nav-label">Administrasi</li>

@@ -2,16 +2,14 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\Role;
 use App\Models\SystemSetting;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreBorrowingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->role->isStaff() ?? false;
+        return $this->user() !== null;
     }
 
     /**
@@ -20,13 +18,7 @@ class StoreBorrowingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => [
-                'required',
-                'integer',
-                Rule::exists('users', 'id')->where(
-                    fn ($query) => $query->where('role', Role::Anggota->value)
-                ),
-            ],
+            'member_id' => ['required', 'integer', 'exists:members,id'],
             'book_id' => ['required', 'integer', 'exists:books,id'],
             'duration_days' => [
                 'required',
@@ -43,8 +35,8 @@ class StoreBorrowingRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'user_id.required' => 'Anggota peminjam wajib dipilih.',
-            'user_id.exists' => 'Anggota peminjam tidak valid.',
+            'member_id.required' => 'Anggota peminjam wajib dipilih.',
+            'member_id.exists' => 'Anggota peminjam tidak valid.',
             'book_id.required' => 'Buku yang dipinjam wajib dipilih.',
             'book_id.exists' => 'Buku yang dipilih tidak ditemukan.',
             'duration_days.required' => 'Durasi peminjaman wajib diisi.',
@@ -60,7 +52,7 @@ class StoreBorrowingRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'user_id' => 'anggota peminjam',
+            'member_id' => 'anggota peminjam',
             'book_id' => 'buku',
             'duration_days' => 'durasi peminjaman',
         ];

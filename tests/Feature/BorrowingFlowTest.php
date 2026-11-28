@@ -3,16 +3,9 @@
 use App\Enums\BorrowingStatus;
 use App\Models\Book;
 use App\Models\Borrowing;
+use App\Models\Member;
 use App\Models\SystemSetting;
 use App\Models\User;
-
-it('menolak anggota membuka halaman sirkulasi', function () {
-    $anggota = User::factory()->anggota()->create();
-
-    $this->actingAs($anggota)
-        ->get(route('borrowings.index'))
-        ->assertRedirect(route('dashboard'));
-});
 
 it('menolak petugas membuka manajemen user', function () {
     $petugas = User::factory()->petugas()->create();
@@ -22,30 +15,22 @@ it('menolak petugas membuka manajemen user', function () {
         ->assertRedirect(route('dashboard'));
 });
 
-it('menolak anggota membuat buku', function () {
-    $anggota = User::factory()->anggota()->create();
+it('memberikan admin akses penuh kelola user', function () {
+    $admin = User::factory()->admin()->create();
 
-    $this->actingAs($anggota)
-        ->get(route('books.create'))
-        ->assertRedirect(route('dashboard'));
-});
-
-it('memberikan superadmin akses penuh kelola user', function () {
-    $superadmin = User::factory()->superadmin()->create();
-
-    $this->actingAs($superadmin)
+    $this->actingAs($admin)
         ->get(route('users.index'))
         ->assertOk();
 });
 
 it('menurunkan stok tersedia saat peminjaman', function () {
     $petugas = User::factory()->petugas()->create();
-    $anggota = User::factory()->anggota()->create();
+    $member = Member::factory()->create();
     $book = Book::factory()->create(['total_stock' => 3, 'available_stock' => 3]);
 
     $this->actingAs($petugas)
         ->post(route('borrowings.store'), [
-            'user_id' => $anggota->id,
+            'member_id' => $member->id,
             'book_id' => $book->id,
             'duration_days' => 7,
         ])
@@ -55,19 +40,19 @@ it('menurunkan stok tersedia saat peminjaman', function () {
 
     $this->assertDatabaseHas('borrowings', [
         'book_id' => $book->id,
-        'user_id' => $anggota->id,
+        'member_id' => $member->id,
         'status' => BorrowingStatus::Borrowed->value,
     ]);
 });
 
 it('menolak peminjaman saat stok buku kosong', function () {
     $petugas = User::factory()->petugas()->create();
-    $anggota = User::factory()->anggota()->create();
+    $member = Member::factory()->create();
     $book = Book::factory()->create(['total_stock' => 1, 'available_stock' => 0]);
 
     $this->actingAs($petugas)
         ->post(route('borrowings.store'), [
-            'user_id' => $anggota->id,
+            'member_id' => $member->id,
             'book_id' => $book->id,
             'duration_days' => 7,
         ])
@@ -78,7 +63,7 @@ it('menolak peminjaman saat stok buku kosong', function () {
 
 it('menolak durasi peminjaman melebihi batas sistem', function () {
     $petugas = User::factory()->petugas()->create();
-    $anggota = User::factory()->anggota()->create();
+    $member = Member::factory()->create();
     $book = Book::factory()->create();
 
     SystemSetting::query()->updateOrCreate(
@@ -89,7 +74,7 @@ it('menolak durasi peminjaman melebihi batas sistem', function () {
 
     $this->actingAs($petugas)
         ->post(route('borrowings.store'), [
-            'user_id' => $anggota->id,
+            'member_id' => $member->id,
             'book_id' => $book->id,
             'duration_days' => 15,
         ])
@@ -97,7 +82,7 @@ it('menolak durasi peminjaman melebihi batas sistem', function () {
 
     $this->actingAs($petugas)
         ->post(route('borrowings.store'), [
-            'user_id' => $anggota->id,
+            'member_id' => $member->id,
             'book_id' => $book->id,
             'duration_days' => 14,
         ])
@@ -106,7 +91,7 @@ it('menolak durasi peminjaman melebihi batas sistem', function () {
 
 it('menerima durasi peminjaman sesuai batas konfigurasi', function () {
     $petugas = User::factory()->petugas()->create();
-    $anggota = User::factory()->anggota()->create();
+    $member = Member::factory()->create();
     $book = Book::factory()->create(['total_stock' => 2, 'available_stock' => 2]);
 
     SystemSetting::query()->updateOrCreate(
@@ -117,7 +102,7 @@ it('menerima durasi peminjaman sesuai batas konfigurasi', function () {
 
     $this->actingAs($petugas)
         ->post(route('borrowings.store'), [
-            'user_id' => $anggota->id,
+            'member_id' => $member->id,
             'book_id' => $book->id,
             'duration_days' => 30,
         ])
@@ -126,18 +111,17 @@ it('menerima durasi peminjaman sesuai batas konfigurasi', function () {
     expect($book->fresh()->available_stock)->toBe(1);
 });
 
-it('hanya mengizinkan peminjaman untuk role anggota', function () {
+it('menolak peminjaman jika member_id tidak terdaftar di tabel members', function () {
     $petugas = User::factory()->petugas()->create();
-    $adminLain = User::factory()->admin()->create();
     $book = Book::factory()->create();
 
     $this->actingAs($petugas)
         ->post(route('borrowings.store'), [
-            'user_id' => $adminLain->id,
+            'member_id' => 999999,
             'book_id' => $book->id,
             'duration_days' => 7,
         ])
-        ->assertSessionHasErrors('user_id');
+        ->assertSessionHasErrors('member_id');
 });
 
 it('tidak menghasilkan denda saat pengembalian tepat waktu', function () {
@@ -206,21 +190,21 @@ it('menolak pengembalian transaksi yang sudah selesai', function () {
         ->assertSessionHasErrors('status');
 });
 
-it('dashboard anggota tidak menampilkan kartu total anggota', function () {
-    $anggota = User::factory()->anggota()->create();
+it('dashboard petugas menampilkan kartu jumlah member', function () {
+    $petugas = User::factory()->petugas()->create();
 
-    $this->actingAs($anggota)
+    $this->actingAs($petugas)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertDontSee('Total Anggota', false);
+        ->assertSee('Jumlah Member', false);
 });
 
-it('dashboard admin menampilkan kartu total anggota', function () {
+it('dashboard admin menampilkan kartu jumlah member', function () {
     $admin = User::factory()->admin()->create();
-    User::factory()->anggota()->count(2)->create();
+    Member::factory()->count(2)->create();
 
     $this->actingAs($admin)
         ->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Total Anggota', false);
+        ->assertSee('Jumlah Member', false);
 });

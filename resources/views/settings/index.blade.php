@@ -63,31 +63,6 @@
 
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0"><i class="bi bi-cash-coin text-warning me-1"></i> Aturan Denda</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold" for="denda_per_hari">Denda per Hari Terlambat (Rp)</label>
-                            <input type="number" min="0" class="form-control @error('denda_per_hari') is-invalid @enderror"
-                                   id="denda_per_hari" name="denda_per_hari"
-                                   value="{{ old('denda_per_hari', $settings['denda_per_hari']) }}" required>
-                            @error('denda_per_hari')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label fw-semibold" for="denda_buku_hilang">Denda Buku Hilang (Rp)</label>
-                            <input type="number" min="0" class="form-control @error('denda_buku_hilang') is-invalid @enderror"
-                                   id="denda_buku_hilang" name="denda_buku_hilang"
-                                   value="{{ old('denda_buku_hilang', $settings['denda_buku_hilang']) }}" required>
-                            @error('denda_buku_hilang')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="card mb-4">
-                <div class="card-header">
                     <h5 class="card-title mb-0"><i class="bi bi-building text-info me-1"></i> Identitas Perpustakaan</h5>
                 </div>
                 <div class="card-body">

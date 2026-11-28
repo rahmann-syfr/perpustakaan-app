@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Book;
-use App\Models\Borrowing;
 use App\Models\Category;
 use App\Models\User;
 
@@ -9,17 +8,16 @@ use App\Models\User;
  * Menguji seluruh endpoint mutasi (POST/PUT/DELETE) agar tidak ada
  * error 500 akibat validasi atau otorisasi yang tidak lengkap.
  */
-it('menolak anggota yang mengakses endpoint khusus petugas', function () {
-    $anggota = User::factory()->anggota()->create();
+it('menolak tamu yang mengakses endpoint khusus petugas', function () {
     $book = Book::factory()->create();
 
-    $this->actingAs($anggota)->post(route('books.store'), [])->assertRedirect();
-    $this->actingAs($anggota)->post(route('borrowings.store'), [])->assertRedirect();
-    $this->actingAs($anggota)->post(route('categories.store'), [])->assertRedirect();
-    $this->actingAs($anggota)->post(route('members.store'), [])->assertRedirect();
-    $this->actingAs($anggota)->post(route('users.store'), [])->assertRedirect();
-    $this->actingAs($anggota)->put(route('settings.update'), [])->assertRedirect();
-    $this->actingAs($anggota)->delete(route('books.destroy', $book))->assertRedirect();
+    $this->post(route('books.store'), [])->assertRedirect(route('login'));
+    $this->post(route('borrowings.store'), [])->assertRedirect(route('login'));
+    $this->post(route('categories.store'), [])->assertRedirect(route('login'));
+    $this->post(route('members.store'), [])->assertRedirect(route('login'));
+    $this->post(route('users.store'), [])->assertRedirect(route('login'));
+    $this->put(route('settings.update'), [])->assertRedirect(route('login'));
+    $this->delete(route('books.destroy', $book))->assertRedirect(route('login'));
 });
 
 it('menolak petugas yang mengakses endpoint khusus admin', function () {
@@ -27,23 +25,7 @@ it('menolak petugas yang mengakses endpoint khusus admin', function () {
 
     $this->actingAs($petugas)->post(route('users.store'), [])->assertRedirect();
     $this->actingAs($petugas)->put(route('settings.update'), [])->assertRedirect();
-});
-
-it('menolak anggota yang mencoba memperpanjang atau mengembalikan lewat endpoint petugas', function () {
-    $anggota = User::factory()->anggota()->create();
-    $book = Book::factory()->create();
-    $borrowing = Borrowing::factory()->create([
-        'user_id' => $anggota->id,
-        'book_id' => $book->id,
-    ]);
-
-    $this->actingAs($anggota)
-        ->post(route('borrowings.extend', $borrowing))
-        ->assertRedirect();
-
-    $this->actingAs($anggota)
-        ->post(route('borrowings.return', $borrowing), ['status' => 'returned'])
-        ->assertRedirect();
+    $this->actingAs($petugas)->post(route('categories.store'), [])->assertRedirect();
 });
 
 it('memperbarui pengaturan sistem dengan nilai valid', function () {
@@ -56,8 +38,6 @@ it('memperbarui pengaturan sistem dengan nilai valid', function () {
             'hari_pengingat' => 2,
             'maksimal_perpanjangan' => 3,
             'durasi_perpanjangan' => 10,
-            'denda_per_hari' => 3000,
-            'denda_buku_hilang' => 75000,
             'nama_perpustakaan' => 'PerpusApp Nusantara',
             'email_perpustakaan' => 'info@perpus.test',
         ])
@@ -92,7 +72,6 @@ it('menyimpan buku baru dengan data valid', function () {
             'published_year' => 2024,
             'category_id' => $category->id,
             'total_stock' => 3,
-            'fine_per_day' => 2000,
         ])
         ->assertRedirect(route('books.index'));
 
@@ -106,12 +85,12 @@ it('menyimpan anggota baru dengan data valid', function () {
         ->post(route('members.store'), [
             'name' => 'Anggota Uji',
             'email' => 'anggota.uji@perpus.test',
-            'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
+            'phone' => '081234567890',
+            'address' => 'Jl. Merdeka No. 1',
         ])
         ->assertRedirect(route('members.index'));
 
-    $this->assertDatabaseHas('users', ['email' => 'anggota.uji@perpus.test']);
+    $this->assertDatabaseHas('members', ['email' => 'anggota.uji@perpus.test']);
 });
 
 it('menyimpan kategori baru dan menolak duplikat nama', function () {

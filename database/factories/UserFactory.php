@@ -31,7 +31,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'role' => Role::Anggota->value,
+            'role' => Role::Petugas->value,
         ];
     }
 
@@ -42,16 +42,6 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
-        ]);
-    }
-
-    /**
-     * Akun dengan hak akses superadmin.
-     */
-    public function superadmin(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'role' => Role::Superadmin->value,
         ]);
     }
 
@@ -72,16 +62,6 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => Role::Petugas->value,
-        ]);
-    }
-
-    /**
-     * Akun dengan hak akses anggota perpustakaan.
-     */
-    public function anggota(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'role' => Role::Anggota->value,
         ]);
     }
 }

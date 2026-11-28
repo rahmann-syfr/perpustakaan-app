@@ -3,6 +3,7 @@
 use App\Models\Book;
 use App\Models\Borrowing;
 use App\Models\Category;
+use App\Models\Member;
 use App\Models\User;
 
 /**
@@ -16,16 +17,17 @@ function seedPerpusData(): array
     $category = Category::factory()->create();
     $book = Book::factory()->create(['category_id' => $category->id]);
     $bookLain = Book::factory()->create(['category_id' => $category->id]);
-    $anggota = User::factory()->anggota()->create();
+    $anggota = Member::factory()->create();
+    $targetUser = User::factory()->petugas()->create();
 
-    Borrowing::factory()->create(['user_id' => $anggota->id, 'book_id' => $book->id]);
+    Borrowing::factory()->create(['member_id' => $anggota->id, 'book_id' => $book->id]);
     Borrowing::factory()->overdue(5)->create([
-        'user_id' => $anggota->id,
+        'member_id' => $anggota->id,
         'book_id' => $book->id,
         'admin_id' => null,
     ]);
     Borrowing::factory()->returned()->create([
-        'user_id' => $anggota->id,
+        'member_id' => $anggota->id,
         'book_id' => $book->id,
         'admin_id' => null,
     ]);
@@ -35,6 +37,7 @@ function seedPerpusData(): array
         'book' => $book,
         'bookLain' => $bookLain,
         'anggota' => $anggota,
+        'targetUser' => $targetUser,
     ];
 }
 
@@ -52,16 +55,13 @@ function daftarHalamanGet(): array
         'dashboard' => ['dashboard', []],
         'profil' => ['profile.show', []],
         'buku show' => ['books.show', ['book']],
-        'laporan' => ['analytics.index', []],
-        'laporan 6 bulan' => ['analytics.index', []],
-        'laporan 12 bulan' => ['analytics.index', []],
         'pengaturan' => ['settings.index', []],
         'anggota' => ['members.index', []],
         'anggota cari' => ['members.index', []],
         'anggota status' => ['members.index', []],
-        'anggota detail' => ['members.show', ['id']],
+        'anggota detail' => ['members.show', ['member']],
         'anggota form' => ['members.create', []],
-        'anggota edit' => ['members.edit', ['id']],
+        'anggota edit' => ['members.edit', ['member']],
         'buku data' => ['books.index', []],
         'buku form' => ['books.create', []],
         'buku edit' => ['books.edit', ['book']],
@@ -69,7 +69,6 @@ function daftarHalamanGet(): array
         'kategori edit' => ['categories.edit', ['category']],
         'sirkulasi' => ['borrowings.index', []],
         'sirkulasi form' => ['borrowings.create', []],
-        'denda' => ['fines.index', []],
         'pengguna' => ['users.index', []],
         'pengguna form' => ['users.create', []],
         'pengguna edit' => ['users.edit', ['user']],
@@ -88,8 +87,8 @@ function parameterRoute(array $kunci, array $data, array $query = []): array
 
     foreach ($kunci as $key) {
         $parameter[$key] = match ($key) {
-            'id' => $data['anggota']->id,
-            'user' => $data['anggota'],
+            'member' => $data['anggota'],
+            'user' => $data['targetUser'],
             default => $data[$key],
         };
     }
@@ -110,15 +109,15 @@ function datasetHalaman(): array
 
 it('merender daftar anggota dengan filter terlambat tanpa error', function () {
     $petugas = User::factory()->petugas()->create();
-    $terlambat = User::factory()->anggota()->create(['name' => 'Anggota Terlambat']);
-    $normal = User::factory()->anggota()->create(['name' => 'Anggota Normal']);
+    $terlambat = Member::factory()->create(['name' => 'Anggota Terlambat']);
+    $normal = Member::factory()->create(['name' => 'Anggota Normal']);
 
     Borrowing::factory()->overdue(5)->create([
-        'user_id' => $terlambat->id,
+        'member_id' => $terlambat->id,
         'admin_id' => null,
     ]);
     Borrowing::factory()->create([
-        'user_id' => $normal->id,
+        'member_id' => $normal->id,
         'admin_id' => null,
         'due_date' => now()->startOfDay()->addDays(5),
     ]);
@@ -133,10 +132,10 @@ it('merender daftar anggota dengan filter terlambat tanpa error', function () {
 
 it('merender daftar anggota dengan filter tidak meminjam tanpa error', function () {
     $petugas = User::factory()->petugas()->create();
-    $aktif = User::factory()->anggota()->create(['name' => 'Anggota Aktif']);
-    $nonaktif = User::factory()->anggota()->create(['name' => 'Anggota Nonaktif']);
+    $aktif = Member::factory()->create(['name' => 'Anggota Aktif']);
+    $nonaktif = Member::factory()->create(['name' => 'Anggota Nonaktif']);
 
-    Borrowing::factory()->create(['user_id' => $aktif->id, 'admin_id' => null]);
+    Borrowing::factory()->create(['member_id' => $aktif->id, 'admin_id' => null]);
 
     $response = $this->actingAs($petugas)
         ->get(route('members.index', ['status' => 'nonaktif']));
@@ -148,11 +147,11 @@ it('merender daftar anggota dengan filter tidak meminjam tanpa error', function 
 
 it('merender daftar anggota dengan pencarian nama dan email', function () {
     $petugas = User::factory()->petugas()->create();
-    User::factory()->anggota()->create([
+    Member::factory()->create([
         'name' => 'Cahyani Hamzah',
         'email' => 'cahyani@perpus.test',
     ]);
-    User::factory()->anggota()->create([
+    Member::factory()->create([
         'name' => 'Budi Santoso',
         'email' => 'budi@perpus.test',
     ]);
@@ -162,23 +161,6 @@ it('merender daftar anggota dengan pencarian nama dan email', function () {
         ->assertOk()
         ->assertSee('Cahyani Hamzah')
         ->assertDontSee('Budi Santoso');
-});
-
-it('merender analitik tanpa data transaksi sama sekali', function () {
-    $petugas = User::factory()->petugas()->create();
-
-    $this->actingAs($petugas)
-        ->get(route('analytics.index'))
-        ->assertOk()
-        ->assertSee('Belum ada data peminjaman.');
-});
-
-it('merender analitik dengan rentang bulan yang tidak valid tanpa error', function () {
-    $petugas = User::factory()->petugas()->create();
-
-    $this->actingAs($petugas)
-        ->get(route('analytics.index', ['range' => 99]))
-        ->assertOk();
 });
 
 it('merender pengaturan dengan nilai default saat belum pernah disimpan', function () {
@@ -200,7 +182,7 @@ it('merender profil pengguna tanpa error', function () {
 
 it('menyediakan kolom pencarian dan empty state pada halaman data', function (string $role, string $route) {
     $petugas = User::factory()->{$role}()->create();
-    User::factory()->anggota()->create(['name' => 'Anggota searchable']);
+    Member::factory()->create(['name' => 'Anggota searchable']);
 
     $response = $this->actingAs($petugas)->get(route($route));
 
@@ -227,24 +209,16 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
         $response->assertOk("Halaman [{$nama}] gagal dirender untuk role {$role}.");
     }
 })->with([
-    'anggota' => ['anggota', [
-        'dashboard' => ['dashboard', [], []],
-        'profil' => ['profile.show', [], []],
-        'buku show' => ['books.show', ['book'], []],
-    ]],
     'petugas' => ['petugas', [
         'dashboard' => ['dashboard', [], []],
         'profil' => ['profile.show', [], []],
         'buku show' => ['books.show', ['book'], []],
-        'laporan' => ['analytics.index', [], []],
-        'laporan 6 bulan' => ['analytics.index', [], ['range' => 6]],
-        'laporan 12 bulan' => ['analytics.index', [], ['range' => 12]],
         'anggota' => ['members.index', [], []],
         'anggota cari' => ['members.index', [], ['search' => 'a']],
         'anggota status' => ['members.index', [], ['status' => 'terlambat']],
-        'anggota detail' => ['members.show', ['id'], []],
+        'anggota detail' => ['members.show', ['member'], []],
         'anggota form' => ['members.create', [], []],
-        'anggota edit' => ['members.edit', ['id'], []],
+        'anggota edit' => ['members.edit', ['member'], []],
         'buku data' => ['books.index', [], []],
         'buku form' => ['books.create', [], []],
         'buku edit' => ['books.edit', ['book'], []],
@@ -254,19 +228,6 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
     ]],
     'admin' => ['admin', [
         'dashboard' => ['dashboard', [], []],
-        'laporan' => ['analytics.index', [], []],
-        'pengaturan' => ['settings.index', [], []],
-        'anggota' => ['members.index', [], []],
-        'pengguna' => ['users.index', [], []],
-        'pengguna form' => ['users.create', [], []],
-        'pengguna edit' => ['users.edit', ['user'], []],
-        'sirkulasi' => ['borrowings.index', [], []],
-        'buku data' => ['books.index', [], []],
-        'kategori edit' => ['categories.edit', ['category'], []],
-    ]],
-    'superadmin' => ['superadmin', [
-        'dashboard' => ['dashboard', [], []],
-        'laporan' => ['analytics.index', [], []],
         'pengaturan' => ['settings.index', [], []],
         'anggota' => ['members.index', [], []],
         'pengguna' => ['users.index', [], []],
@@ -275,5 +236,6 @@ it('merender seluruh halaman untuk setiap role tanpa error', function (string $r
         'sirkulasi' => ['borrowings.index', [], []],
         'buku data' => ['books.index', [], []],
         'kategori' => ['categories.index', [], []],
+        'kategori edit' => ['categories.edit', ['category'], []],
     ]],
 ]);
